@@ -1,12 +1,13 @@
--- doublejump.lua (LocalScript para StarterPlayerScripts)
+-- quintuplejump.lua (LocalScript para StarterPlayerScripts)
+
 local Players = game:GetService("Players")
 local UserInput = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
-local MAX_JUMPS = 2           -- quantos pulos (1 normal + 1 extra)
-local EXTRA_JUMP_POWER = 50   -- altura do segundo pulo
-local COOLDOWN = 0.15         -- proteção contra spam
+local MAX_JUMPS = 5           -- número total de pulos (1 normal + 4 extras)
+local EXTRA_JUMP_POWER = 50   -- altura dos pulos extras
+local COOLDOWN = 0.15         -- protege contra gatilho múltiplo
 
 local jumps = 0
 local lastJumpTime = 0
@@ -19,6 +20,7 @@ local function onCharacterAdded(character)
     jumps = 0
     lastJumpTime = 0
 
+    -- resetar pulos ao tocar no chão
     humanoid.StateChanged:Connect(function(_, new)
         if new == Enum.HumanoidStateType.Landed or new == Enum.HumanoidStateType.Running then
             jumps = 0
@@ -31,6 +33,7 @@ local function onCharacterAdded(character)
         end
     end)
 
+    -- captura o pulo
     UserInput.JumpRequest:Connect(function()
         if not humanoid or not hrp then return end
         local now = tick()
@@ -50,6 +53,7 @@ local function onCharacterAdded(character)
     end)
 end
 
+-- conecta personagem atual e futuros
 if player.Character then
     onCharacterAdded(player.Character)
 end
