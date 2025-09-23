@@ -1,11 +1,10 @@
--- ServerScriptService/TeleportaJogadorMoveTo.lua
+-- ServerScriptService/TeleportaMita.lua
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 
-local NOME_ALVO = "mita_2060" -- Jogador específico
-local DISTANCIA_FINAL = 3 -- Distância final em frente ao player que apertou a tecla
+local NOME_ALVO = "mita_2060" -- Jogador que será teleportado
+local DISTANCIA_FINAL = 3 -- Distância à frente do jogador que apertou a tecla
 
--- Função para teletransportar o jogador alvo usando MoveTo
 local function teleportarAlvo(player)
     if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
     local hrp = player.Character.HumanoidRootPart
@@ -14,15 +13,15 @@ local function teleportarAlvo(player)
     local alvo = Players:FindFirstChild(NOME_ALVO)
     if alvo and alvo.Character and alvo.Character:FindFirstChild("Humanoid") and alvo.Character:FindFirstChild("HumanoidRootPart") then
         local humanoid = alvo.Character.Humanoid
-        local hrpAlvo = alvo.Character.HumanoidRootPart
         local destino = posPlayer + Vector3.new(0, 0, -DISTANCIA_FINAL)
 
-        -- Move o Humanoid para o destino
-        humanoid:MoveTo(destino)
-
-        -- Opcional: reforçar a posição após 0.1s caso o personagem ainda esteja “deslizando”
-        delay(0.1, function()
-            humanoid:MoveTo(destino)
+        -- Desativa movimentação temporariamente
+        humanoid.PlatformStand = true
+        -- Teleporta usando SetPrimaryPartCFrame
+        alvo.Character:SetPrimaryPartCFrame(CFrame.new(destino))
+        -- Reativa movimentação depois de 0.1s
+        task.delay(0.1, function()
+            humanoid.PlatformStand = false
         end)
     end
 end
@@ -31,7 +30,7 @@ end
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode == Enum.KeyCode.K then
-        local player = Players:GetPlayers()[1] -- adaptável para jogador que apertou a tecla
+        local player = Players:GetPlayers()[1] -- adaptável para o jogador que apertou a tecla
         teleportarAlvo(player)
     end
 end)
