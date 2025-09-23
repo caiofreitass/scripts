@@ -1,18 +1,17 @@
--- CasaGiganteVazia.lua
+-- CasaGiganteVaziaComRemove.lua
 local UserInput = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 
 local player = Players.LocalPlayer
 
 -- Dimensões da casa
-local CASA_WIDTH = 40      -- largura
-local CASA_LENGTH = 30     -- comprimento
-local CASA_HEIGHT = 8      -- altura de cada andar
+local CASA_WIDTH = 40
+local CASA_LENGTH = 30
+local CASA_HEIGHT = 8
 local PAREDE_THICKNESS = 1
 
 -- Tamanho das aberturas
 local ABERTURA_LARGURA = 4
-local ABERTURA_ALTURA = 7
 
 -- Função para criar uma part
 local function criarPart(size, pos, cor, parent)
@@ -41,13 +40,11 @@ local function criarCasa()
         -- Chão do andar
         criarPart(Vector3.new(CASA_WIDTH, PAREDE_THICKNESS, CASA_LENGTH), frente + Vector3.new(0, yBase + PAREDE_THICKNESS/2, 0), "Bright red", model)
 
-        -- Paredes: frontal dividida para abrir espaço no meio
+        -- Paredes frontal dividida para abertura
         local aberturaMeio = ABERTURA_LARGURA
         local paredeLado = (CASA_WIDTH - aberturaMeio) / 2
 
-        -- Paredes frontal esquerda
         criarPart(Vector3.new(paredeLado, CASA_HEIGHT, PAREDE_THICKNESS), frente + Vector3.new(-(paredeLado+aberturaMeio)/2, yBase + CASA_HEIGHT/2, CASA_LENGTH/2), "Bright red", model)
-        -- Paredes frontal direita
         criarPart(Vector3.new(paredeLado, CASA_HEIGHT, PAREDE_THICKNESS), frente + Vector3.new((paredeLado+aberturaMeio)/2, yBase + CASA_HEIGHT/2, CASA_LENGTH/2), "Bright red", model)
 
         -- Parede traseira inteira
@@ -66,10 +63,21 @@ local function criarCasa()
     criarAndar(CASA_HEIGHT)     -- 2º andar
 end
 
--- Detecta tecla ç
+-- Função para remover todas as casas criadas
+local function removerCasas()
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("Model") and obj.Name == "CasaGiganteVazia" then
+            obj:Destroy()
+        end
+    end
+end
+
+-- Detecta teclas
 UserInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode == Enum.KeyCode.Semicolon then
         criarCasa()
+    elseif input.KeyCode == Enum.KeyCode.P then
+        removerCasas()
     end
 end)
