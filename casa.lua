@@ -1,110 +1,35 @@
--- ServerScriptService/PredioCorrigido.lua
+-- ServerScriptService/PuxarPlayers.lua
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 
-local NOME_PASTA = "Predio"
-local PREDIO_WIDTH = 30
-local PREDIO_LENGTH = 20
-local PREDIO_HEIGHT = 8
-local PAREDE_THICKNESS = 1
-local NUM_ANDARES = 3
-local PORTA_WIDTH = 6
-local PORTA_HEIGHT = 7
-local ESCADA_WIDTH = 4
-local ESCADA_STEP_HEIGHT = 1
-local ESCADA_STEP_DEPTH = 2
+local RAIO = 30 -- Distância máxima para puxar jogadores
+local DISTANCIA_FINAL = 5 -- Distância final de onde você estará
 
--- Função para criar part sólida
-local function criarPart(size, pos, cor, parent)
-    local part = Instance.new("Part")
-    part.Size = size
-    part.Position = pos
-    part.Anchored = true
-    part.CanCollide = true
-    part.BrickColor = BrickColor.new(cor)
-    part.Parent = parent
-    return part
-end
+-- Função para puxar jogadores próximos
+local function puxarProximo(player)
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local hrp = char.HumanoidRootPart
+    local posPlayer = hrp.Position
 
-local function criarPredio()
-    -- Remove pasta existente
-    local pastaExistente = workspace:FindFirstChild(NOME_PASTA)
-    if pastaExistente then pastaExistente:Destroy() end
-    local pasta = Instance.new("Folder")
-    pasta.Name = NOME_PASTA
-    pasta.Parent = workspace
-
-    -- Posição à frente do primeiro jogador
-    local player = Players:GetPlayers()[1]
-    if not player or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
-    local hrp = player.Character.HumanoidRootPart
-    local frente = hrp.Position + hrp.CFrame.LookVector * (PREDIO_LENGTH + 10)
-
-    -- Função para criar cada andar
-    local function criarAndar(yBase)
-        -- Chão
-        criarPart(Vector3.new(PREDIO_WIDTH, PAREDE_THICKNESS, PREDIO_LENGTH), frente + Vector3.new(0, yBase + PAREDE_THICKNESS/2, 0), "Bright blue", pasta)
-
-        -- Paredes laterais
-        criarPart(Vector3.new(PAREDE_THICKNESS, PREDIO_HEIGHT, PREDIO_LENGTH), frente + Vector3.new(-PREDIO_WIDTH/2, yBase + PREDIO_HEIGHT/2, 0), "Bright blue", pasta)
-        criarPart(Vector3.new(PAREDE_THICKNESS, PREDIO_HEIGHT, PREDIO_LENGTH), frente + Vector3.new(PREDIO_WIDTH/2, yBase + PREDIO_HEIGHT/2, 0), "Bright blue", pasta)
-
-        -- Parede traseira
-        criarPart(Vector3.new(PREDIO_WIDTH, PREDIO_HEIGHT, PAREDE_THICKNESS), frente + Vector3.new(0, yBase + PREDIO_HEIGHT/2, -PREDIO_LENGTH/2), "Bright blue", pasta)
-
-        -- Parede frontal
-        if yBase == 0 then
-            -- Porta grande no térreo
-            local ladoPorta = (PREDIO_WIDTH - PORTA_WIDTH) / 2
-            criarPart(Vector3.new(ladoPorta, PREDIO_HEIGHT, PAREDE_THICKNESS), frente + Vector3.new(-(ladoPorta + PORTA_WIDTH)/2, yBase + PREDIO_HEIGHT/2, PREDIO_LENGTH/2), "Bright blue", pasta)
-            criarPart(Vector3.new(ladoPorta, PREDIO_HEIGHT, PAREDE_THICKNESS), frente + Vector3.new((ladoPorta + PORTA_WIDTH)/2, yBase + PREDIO_HEIGHT/2, PREDIO_LENGTH/2), "Bright blue", pasta)
-        else
-            criarPart(Vector3.new(PREDIO_WIDTH, PREDIO_HEIGHT, PAREDE_THICKNESS), frente + Vector3.new(0, yBase + PREDIO_HEIGHT/2, PREDIO_LENGTH/2), "Bright blue", pasta)
-        end
-
-        -- Teto
-        criarPart(Vector3.new(PREDIO_WIDTH, PAREDE_THICKNESS, PREDIO_LENGTH), frente + Vector3.new(0, yBase + PREDIO_HEIGHT + PAREDE_THICKNESS/2, 0), "Bright blue", pasta)
-    end
-
-    -- Criar todos os andares
-    for i = 0, NUM_ANDARES-1 do
-        criarAndar(i * PREDIO_HEIGHT)
-    end
-
-    -- Criar escada interna com abertura no topo de cada andar
-    local escadaX = -PREDIO_WIDTH/2 + ESCADA_WIDTH/2 + 1
-    local escadaZ = -PREDIO_LENGTH/2 + ESCADA_STEP_DEPTH/2 + 1
-    for andar = 0, NUM_ANDARES-1 do
-        for step = 0, PREDIO_HEIGHT-1 do
-            criarPart(Vector3.new(ESCADA_WIDTH, ESCADA_STEP_HEIGHT, ESCADA_STEP_DEPTH),
-                frente + Vector3.new(escadaX, andar * PREDIO_HEIGHT + step + ESCADA_STEP_HEIGHT/2, escadaZ + step * ESCADA_STEP_DEPTH), "Reddish brown", pasta)
-        end
-        -- Abre espaço no teto para a escada do próximo andar
-        if andar < NUM_ANDARES-1 then
-            local abertura = Instance.new("Part")
-            abertura.Size = Vector3.new(ESCADA_WIDTH + 0.1, PAREDE_THICKNESS, ESCADA_STEP_DEPTH + 0.1)
-            abertura.Position = frente + Vector3.new(escadaX, (andar+1) * PREDIO_HEIGHT + PAREDE_THICKNESS/2, escadaZ + (PREDIO_HEIGHT-1)*ESCADA_STEP_DEPTH)
-            abertura.Anchored = true
-            abertura.CanCollide = false
-            abertura.Transparency = 1
-            abertura.Parent = pasta
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local otherHrp = otherPlayer.Character.HumanoidRootPart
+            local distancia = (otherHrp.Position - posPlayer).Magnitude
+            if distancia <= RAIO then
+                -- Move o jogador próximo para frente do player
+                otherHrp.CFrame = CFrame.new(posPlayer + Vector3.new(0, 0, -DISTANCIA_FINAL))
+            end
         end
     end
 end
 
--- Função para remover prédio
-local function removerPredio()
-    local pasta = workspace:FindFirstChild(NOME_PASTA)
-    if pasta then pasta:Destroy() end
-end
-
--- Teclas
-local uis = game:GetService("UserInputService")
-uis.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.KeyCode == Enum.KeyCode.Semicolon then
-        criarPredio()
-    elseif input.KeyCode == Enum.KeyCode.P then
-        removerPredio()
+-- Detecta tecla
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.O then
+        -- Puxa o jogador local e todos próximos
+        local player = Players:GetPlayers()[1] -- No server, você pode adaptar para o jogador que pressionou
+        puxarProximo(player)
     end
 end)
