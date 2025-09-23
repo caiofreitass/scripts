@@ -10,7 +10,7 @@ local CASA_LENGTH = 30
 local CASA_HEIGHT = 8
 local PAREDE_THICKNESS = 1
 
--- Tamanho das aberturas
+-- Tamanho da abertura frontal
 local ABERTURA_LARGURA = 4
 
 -- Função para criar uma part
@@ -24,7 +24,7 @@ local function criarPart(size, pos, cor, parent)
     return part
 end
 
--- Função que cria a casa gigante com aberturas
+-- Função que cria a casa gigante com abertura frontal
 local function criarCasa()
     local char = player.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
@@ -35,12 +35,12 @@ local function criarCasa()
     model.Name = "CasaGiganteVazia"
     model.Parent = workspace
 
-    -- Função auxiliar para criar um andar com abertura frontal
+    -- Função auxiliar para criar cada andar
     local function criarAndar(yBase)
         -- Chão do andar
         criarPart(Vector3.new(CASA_WIDTH, PAREDE_THICKNESS, CASA_LENGTH), frente + Vector3.new(0, yBase + PAREDE_THICKNESS/2, 0), "Bright red", model)
 
-        -- Paredes frontal dividida para abertura
+        -- Paredes frontais com abertura
         local aberturaMeio = ABERTURA_LARGURA
         local paredeLado = (CASA_WIDTH - aberturaMeio) / 2
 
@@ -77,7 +77,7 @@ UserInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode == Enum.KeyCode.Semicolon then
         criarCasa()
-    elseif input.KeyCode == Enum.KeyCode.P then
+    elseif input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode.Name == "P" then
         removerCasas()
     end
 end)
