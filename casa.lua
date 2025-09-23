@@ -27,9 +27,8 @@ end
 -- Detecta tecla
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.O then
-        -- Puxa o jogador local e todos próximos
-        local player = Players:GetPlayers()[1] -- No server, você pode adaptar para o jogador que pressionou
+    if input.KeyCode == Enum.KeyCode.K then -- Troque para a tecla que quiser
+        local player = Players:GetPlayers()[1] -- Adaptar para o jogador que pressionou se quiser
         puxarProximo(player)
     end
 end)
