@@ -1,44 +1,42 @@
--- Coloque este script em ServerScriptService
+-- teleport_mita.lua
+-- Teleporta o jogador "mita_2060" para perto de quem usar o script
+-- e mostra texto flutuante "rapadura mole" acima dele
+
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService") -- funciona só em LocalScript
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local NOME_ALVO = "mita_2060"
 local DISTANCIA_FINAL = 3
 
--- RemoteEvent para acionar teleporte via tecla (porque InputBegan só roda no cliente)
-local remote = Instance.new("RemoteEvent")
-remote.Name = "TeleportarMita"
-remote.Parent = ReplicatedStorage
-
--- Cria texto acima do jogador
+-- Cria texto flutuante
 local function criarTextoAcimaJogador(alvo, texto)
-	if not alvo.Character or not alvo.Character:FindFirstChild("HumanoidRootPart") then return end
-	local hrp = alvo.Character.HumanoidRootPart
+	if not alvo.Character or not alvo.Character:FindFirstChild("Head") then return end
+	local head = alvo.Character.Head
 
-	-- Remove GUI antiga se existir
-	if hrp:FindFirstChild("NomeGui") then
-		hrp.NomeGui:Destroy()
+	-- Remove GUI antiga
+	if head:FindFirstChild("NomeGui") then
+		head.NomeGui:Destroy()
 	end
 
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = "NomeGui"
 	billboard.Size = UDim2.new(0, 200, 0, 50)
-	billboard.Adornee = hrp
+	billboard.Adornee = head
 	billboard.AlwaysOnTop = true
-	billboard.Parent = hrp
+	billboard.StudsOffset = Vector3.new(0, 2, 0)
+	billboard.Parent = head
 
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1, 0, 1, 0)
 	label.BackgroundTransparency = 1
-	label.TextColor3 = Color3.new(1, 0, 0) -- vermelho
+	label.TextColor3 = Color3.new(1, 0, 0)
 	label.TextStrokeTransparency = 0
 	label.TextScaled = true
+	label.Font = Enum.Font.FredokaOne
 	label.Text = texto
 	label.Parent = billboard
 end
 
--- Teleporte no servidor
+-- Teleportar jogador alvo
 local function teleportarAlvo(player)
 	if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
 	local hrp = player.Character.HumanoidRootPart
@@ -49,32 +47,23 @@ local function teleportarAlvo(player)
 		local humanoid = alvo.Character.Humanoid
 		local destino = posPlayer + Vector3.new(0, 0, -DISTANCIA_FINAL)
 
-		-- Bloqueia movimento temporário
 		humanoid.PlatformStand = true
 		alvo.Character:SetPrimaryPartCFrame(CFrame.new(destino))
 		task.delay(0.1, function()
 			humanoid.PlatformStand = false
 		end)
 
-		-- Mostra texto pra TODOS
 		criarTextoAcimaJogador(alvo, "rapadura mole")
 	end
 end
 
--- Recebe sinal do cliente
-remote.OnServerEvent:Connect(function(player)
-	teleportarAlvo(player)
-end)
-
--- CLIENTE → tecla K envia sinal
--- Coloque este LocalScript em StarterPlayerScripts
-local UIS = game:GetService("UserInputService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local remote = ReplicatedStorage:WaitForChild("TeleportarMita")
-
-UIS.InputBegan:Connect(function(input, gp)
+-- Tecla K detectada pelo jogador que executa
+game:GetService("UserInputService").InputBegan:Connect(function(input, gp)
 	if gp then return end
 	if input.KeyCode == Enum.KeyCode.K then
-		remote:FireServer()
+		local player = Players.LocalPlayer
+		if player then
+			teleportarAlvo(player)
+		end
 	end
 end)
