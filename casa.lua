@@ -1,4 +1,4 @@
--- CasaGiganteVaziaComRemove.lua
+-- CasaGiganteVaziaComRemoveEPhysics.lua
 local UserInput = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 
@@ -72,6 +72,19 @@ local function removerCasas()
     end
 end
 
+-- Função para desancorar todas as parts das casas
+local function liberarCasas()
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("Model") and obj.Name == "CasaGiganteVazia" then
+            for _, part in pairs(obj:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Anchored = false
+                end
+            end
+        end
+    end
+end
+
 -- Detecta teclas
 UserInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
@@ -79,5 +92,7 @@ UserInput.InputBegan:Connect(function(input, gameProcessed)
         criarCasa()
     elseif input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode.Name == "P" then
         removerCasas()
+    elseif input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode.Name == "O" then
+        liberarCasas()
     end
 end)
