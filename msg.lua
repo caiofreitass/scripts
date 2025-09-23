@@ -1,9 +1,11 @@
+-- HTTP-ready, funciona para todos os jogadores
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
--- RemoteEvent
+-- CRIAR RemoteEvent
 local remote = ReplicatedStorage:FindFirstChild("MensagemGUIGlobal")
 if not remote then
     remote = Instance.new("RemoteEvent")
@@ -11,36 +13,35 @@ if not remote then
     remote.Parent = ReplicatedStorage
 end
 
--- SERVER: envia para todos
+-- CÓDIGO DO SERVIDOR
 if RunService:IsServer() then
     remote.OnServerEvent:Connect(function(player)
+        -- Dispara para todos os clientes
         remote:FireAllClients("rapadura mole")
     end)
 end
 
--- CLIENT: cria GUI e detecta tecla
+-- CÓDIGO DO CLIENTE
 if RunService:IsClient() then
     local player = Players.LocalPlayer
 
+    -- Função para criar GUI temporária
     local function mostrarMensagem(msg)
-        -- Cria ScreenGui temporário
         local screenGui = Instance.new("ScreenGui")
         screenGui.Name = "MensagemGlobalGUI"
         screenGui.ResetOnSpawn = false
         screenGui.Parent = player:WaitForChild("PlayerGui")
 
-        -- Cria TextLabel transparente
         local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(0.5,0,0.1,0)
-        label.Position = UDim2.new(0.25,0,0.45,0)
-        label.BackgroundTransparency = 1 -- totalmente transparente
-        label.TextColor3 = Color3.new(1,0,0)
+        label.Size = UDim2.new(0.5, 0, 0.1, 0)
+        label.Position = UDim2.new(0.25, 0, 0.45, 0)
+        label.BackgroundTransparency = 1
+        label.TextColor3 = Color3.new(1, 0, 0)
         label.Font = Enum.Font.FredokaOne
         label.TextScaled = true
         label.Text = msg
         label.Parent = screenGui
 
-        -- Destrói GUI depois de 3 segundos
         task.delay(3, function()
             screenGui:Destroy()
         end)
@@ -51,7 +52,7 @@ if RunService:IsClient() then
         mostrarMensagem(msg)
     end)
 
-    -- Detecta tecla L
+    -- Detecta tecla L e envia evento pro servidor
     UserInputService.InputBegan:Connect(function(input, gp)
         if gp then return end
         if input.KeyCode == Enum.KeyCode.L then
