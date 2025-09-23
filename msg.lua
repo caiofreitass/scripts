@@ -1,10 +1,12 @@
--- Script para todos verem GUI global ao apertar L
+-- msg_gui_global.lua
+-- Mostra "rapadura mole" na tela de todos os jogadores ao apertar L
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
--- Cria RemoteEvent se não existir
+-- Cria RemoteEvent
 local remote = ReplicatedStorage:FindFirstChild("MensagemGUIGlobal")
 if not remote then
     remote = Instance.new("RemoteEvent")
@@ -12,7 +14,7 @@ if not remote then
     remote.Parent = ReplicatedStorage
 end
 
--- SERVER: dispara para todos os clientes
+-- SERVER: dispara mensagem para todos
 if RunService:IsServer() then
     remote.OnServerEvent:Connect(function(player)
         remote:FireAllClients("rapadura mole")
@@ -23,18 +25,19 @@ end
 if RunService:IsClient() then
     local player = Players.LocalPlayer
 
-    -- Cria ScreenGui e Label
+    -- Cria ScreenGui
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "MensagemGlobalGUI"
     screenGui.ResetOnSpawn = false
     screenGui.Parent = player:WaitForChild("PlayerGui")
 
+    -- Cria TextLabel centralizado
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.5, 0, 0.1, 0)
     label.Position = UDim2.new(0.25, 0, 0.45, 0)
     label.BackgroundTransparency = 0.5
-    label.BackgroundColor3 = Color3.new(0, 0, 0)
-    label.TextColor3 = Color3.new(1, 0, 0) -- vermelho
+    label.BackgroundColor3 = Color3.new(0,0,0)
+    label.TextColor3 = Color3.new(1,0,0) -- vermelho
     label.Font = Enum.Font.FredokaOne
     label.TextScaled = true
     label.Text = ""
@@ -43,8 +46,9 @@ if RunService:IsClient() then
     -- Função para mostrar mensagem por 3 segundos
     local function mostrarMensagem(msg)
         label.Text = msg
-        wait(3)
-        label.Text = ""
+        task.delay(3, function()
+            label.Text = ""
+        end)
     end
 
     -- Recebe evento do servidor
@@ -52,7 +56,7 @@ if RunService:IsClient() then
         mostrarMensagem(msg)
     end)
 
-    -- Detecta tecla L e envia para o servidor
+    -- Detecta tecla L e envia evento pro servidor
     UserInputService.InputBegan:Connect(function(input, gp)
         if gp then return end
         if input.KeyCode == Enum.KeyCode.L then
