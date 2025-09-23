@@ -1,13 +1,13 @@
--- quintuplejump.lua (LocalScript para StarterPlayerScripts)
+-- twentyjump.lua (LocalScript para StarterPlayerScripts)
 
 local Players = game:GetService("Players")
 local UserInput = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
-local MAX_JUMPS = 5           -- número total de pulos (1 normal + 4 extras)
+local MAX_JUMPS = 20          -- número total de pulos
 local EXTRA_JUMP_POWER = 50   -- altura dos pulos extras
-local COOLDOWN = 0.15         -- protege contra gatilho múltiplo
+local COOLDOWN = 0.15         -- evita gatilho múltiplo
 
 local jumps = 0
 local lastJumpTime = 0
