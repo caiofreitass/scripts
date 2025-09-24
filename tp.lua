@@ -3,6 +3,25 @@ local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
+-- Função para esperar o personagem
+local function getHRP()
+    local character = player.Character or player.CharacterAdded:Wait()
+    return character:WaitForChild("HumanoidRootPart")
+end
+
+-- Função de teleport
+local function teleportTo(targetPlayer)
+    if not targetPlayer.Character then
+        targetPlayer.CharacterAdded:Wait()
+    end
+
+    local targetHRP = targetPlayer.Character:WaitForChild("HumanoidRootPart")
+    local hrp = getHRP()
+    if hrp and targetHRP then
+        hrp.CFrame = targetHRP.CFrame + Vector3.new(0,3,0)
+    end
+end
+
 -- GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "TPGui"
@@ -30,19 +49,6 @@ listFrame.Parent = screenGui
 local UIListLayout = Instance.new("UIListLayout")
 UIListLayout.Padding = UDim.new(0,5)
 UIListLayout.Parent = listFrame
-
--- Função de teleport
-local function teleportTo(targetPlayer)
-    local character = player.Character
-    local targetChar = targetPlayer.Character
-    if character and targetChar then
-        local hrp = character:FindFirstChild("HumanoidRootPart")
-        local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
-        if hrp and targetHRP then
-            hrp.CFrame = targetHRP.CFrame + Vector3.new(0,3,0) -- um pouco acima do jogador
-        end
-    end
-end
 
 -- Botão TP
 tpButton.MouseButton1Click:Connect(function()
