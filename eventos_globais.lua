@@ -1,11 +1,12 @@
 -- Script no ServerScriptService
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 local Debris = game:GetService("Debris")
 
 local dono = "caiorimador" -- somente este jogador verá a GUI
 
--- RemoteEvent global (opcional para comunicação futura)
+-- RemoteEvent global
 local remote = ReplicatedStorage:FindFirstChild("GlobalEventRemote")
 if not remote then
     remote = Instance.new("RemoteEvent")
@@ -67,6 +68,7 @@ Players.PlayerAdded:Connect(function(player)
     local gui = Instance.new("ScreenGui")
     gui.Name = "EventosGlobaisGUI"
     gui.ResetOnSpawn = false
+    gui.Enabled = false -- começa invisível
     gui.Parent = player:WaitForChild("PlayerGui")
 
     local mainButton = Instance.new("TextButton")
@@ -93,7 +95,6 @@ Players.PlayerAdded:Connect(function(player)
 
     mainButton.MouseButton1Click:Connect(function()
         scrollFrame.Visible = not scrollFrame.Visible
-
         for _, c in pairs(scrollFrame:GetChildren()) do
             if c:IsA("TextButton") then
                 c:Destroy()
@@ -119,5 +120,13 @@ Players.PlayerAdded:Connect(function(player)
         end
 
         scrollFrame.CanvasSize = UDim2.new(0,0,0,offsetY)
+    end)
+
+    -- Tecla G para mostrar/esconder GUI
+    UserInputService.InputBegan:Connect(function(input, gp)
+        if gp then return end
+        if input.KeyCode == Enum.KeyCode.G then
+            gui.Enabled = not gui.Enabled
+        end
     end)
 end)
