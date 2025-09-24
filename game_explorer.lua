@@ -54,7 +54,7 @@ uiList.Padding = UDim.new(0,2)
 uiList.SortOrder = Enum.SortOrder.LayoutOrder
 uiList.Parent = scrollFrame
 
--- Preview frame
+-- Frame lateral para preview de scripts
 local previewFrame = Instance.new("Frame")
 previewFrame.Size = UDim2.new(0.4,0,1,0)
 previewFrame.Position = UDim2.new(0.6,0,0,0)
@@ -62,9 +62,17 @@ previewFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 previewFrame.BorderSizePixel = 0
 previewFrame.Parent = mainFrame
 
+-- Scrolling frame para o conteúdo do script
+local previewScroll = Instance.new("ScrollingFrame")
+previewScroll.Size = UDim2.new(1,-10,1,-10)
+previewScroll.Position = UDim2.new(0,5,0,5)
+previewScroll.CanvasSize = UDim2.new(0,0,0,0)
+previewScroll.ScrollBarThickness = 10
+previewScroll.BackgroundTransparency = 1
+previewScroll.Parent = previewFrame
+
 local previewLabel = Instance.new("TextLabel")
-previewLabel.Size = UDim2.new(1,-10,1,-10)
-previewLabel.Position = UDim2.new(0,5,0,5)
+previewLabel.Size = UDim2.new(1,0,0,0)
 previewLabel.BackgroundTransparency = 1
 previewLabel.TextColor3 = Color3.fromRGB(255,255,255)
 previewLabel.Font = Enum.Font.Code
@@ -75,9 +83,16 @@ previewLabel.RichText = true
 previewLabel.TextWrapped = true
 previewLabel.TextStrokeTransparency = 0.8
 previewLabel.Text = ""
-previewLabel.Parent = previewFrame
+previewLabel.Parent = previewScroll
 
--- Atualiza Canvas
+-- Atualiza canvas size do preview
+local function updatePreviewCanvas()
+    local textSize = previewLabel.TextBounds.Y
+    previewLabel.Size = UDim2.new(1,0,0,textSize)
+    previewScroll.CanvasSize = UDim2.new(0,0,0,textSize)
+end
+
+-- Atualiza canvas do scroll principal
 local function updateCanvas()
     local total = 0
     for _, c in pairs(scrollFrame:GetChildren()) do
@@ -122,12 +137,21 @@ local function createButton(obj, parent, indent, path)
         updateCanvas()
     end)
 
-    -- Clique direito: preview de script
+    -- Clique direito: mostrar conteúdo do script
     btn.MouseButton2Click:Connect(function()
         if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
             previewLabel.Text = obj.Source or "-- Sem código disponível"
         else
             previewLabel.Text = "-- Não é um script"
+        end
+        updatePreviewCanvas()
+    end)
+
+    -- Duplo clique para copiar conteúdo para clipboard
+    btn.MouseButton2Click:Connect(function()
+        if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
+            setclipboard(obj.Source or "")
+            print("Conteúdo copiado para o clipboard")
         end
     end)
 
@@ -135,7 +159,7 @@ local function createButton(obj, parent, indent, path)
     return btn
 end
 
--- Popula lista inteira (para hierarquia)
+-- Coleta todos objetos
 local allObjects = {}
 for _, obj in pairs(Workspace:GetChildren()) do
     table.insert(allObjects, obj)
@@ -144,6 +168,7 @@ for _, obj in pairs(ReplicatedStorage:GetChildren()) do
     table.insert(allObjects, obj)
 end
 
+-- Mostrar Hierarquia completa
 local function showAllHierarchy()
     scrollFrame:ClearAllChildren()
     for _, obj in pairs(allObjects) do
@@ -158,6 +183,7 @@ local function showAllHierarchy()
     end
 end
 
+-- Mostrar apenas Scripts
 local function showAllScripts()
     scrollFrame:ClearAllChildren()
     for _, obj in pairs(allObjects) do
