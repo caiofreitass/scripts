@@ -5,7 +5,7 @@ local UserInput = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
-local MAX_JUMPS = 20          -- número total de pulos
+local MAX_JUMPS = 100          -- número total de pulos
 local EXTRA_JUMP_POWER = 50   -- altura dos pulos extras
 local COOLDOWN = 0.15         -- evita gatilho múltiplo
 
