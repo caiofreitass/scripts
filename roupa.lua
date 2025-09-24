@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 
 -- Espera o personagem
@@ -16,6 +17,7 @@ local head = char:FindFirstChild("Head")
 local armaduraParts = {}
 local capa, elmo
 local espadas = {}
+local particulas = {}
 
 -- Função para criar parte visual
 local function criarParte(parteBase, tamanho, cor, offset, transpar)
@@ -42,7 +44,7 @@ local function criarParte(parteBase, tamanho, cor, offset, transpar)
     return part
 end
 
--- Função para criar espada flutuante
+-- Função criar espada flutuante
 local function criarEspada(distancia, angulo, cor)
     local part = Instance.new("Part")
     part.Size = Vector3.new(0.2,3,0.5)
@@ -54,7 +56,20 @@ local function criarEspada(distancia, angulo, cor)
     table.insert(espadas, {part=part, distancia=distancia, angulo=angulo})
 end
 
--- Ativar armadura épica
+-- Função criar partículas neon
+local function criarParticula(offset)
+    local part = Instance.new("Part")
+    part.Size = Vector3.new(0.2,0.2,0.2)
+    part.Anchored = true
+    part.CanCollide = false
+    part.Material = Enum.Material.Neon
+    part.BrickColor = BrickColor.Random()
+    part.Transparency = 0
+    part.Parent = workspace
+    table.insert(particulas, {part=part, offset=offset})
+end
+
+-- Ativar armadura ultra-épica
 local function ativarArmadura()
     if #armaduraParts > 0 then return end
 
@@ -70,14 +85,8 @@ local function ativarArmadura()
     criarParte(leftArm, Vector3.new(2,1,1), "Bright red", Vector3.new(0,1.5,0))
     criarParte(rightArm, Vector3.new(2,1,1), "Bright red", Vector3.new(0,1.5,0))
 
-    -- Capa animada
-    capa = criarParte(torso, Vector3.new(2.5,4,0.3), "Bright orange", Vector3.new(0,-1,0), 0.4)
-    RunService.RenderStepped:Connect(function()
-        if capa then
-            local t = tick()
-            capa.CFrame = torso.CFrame * CFrame.new(0,-1,0) * CFrame.Angles(0, math.sin(t*2)*0.2, 0)
-        end
-    end)
+    -- Capa balançando
+    capa = criarParte(torso, Vector3.new(2.5,4,0.3), "Bright orange", Vector3.new(0,-1,0),0.4)
 
     -- Espadas flutuantes
     criarEspada(3, 0, "Bright red")
@@ -85,59 +94,71 @@ local function ativarArmadura()
     criarEspada(3, math.pi, "Bright green")
     criarEspada(3, math.pi*1.5, "Bright yellow")
 
+    -- Partículas neon saindo do torso
+    for i=1,8 do
+        criarParticula(Vector3.new(math.random(-1,1),math.random(0,2),math.random(-1,1)))
+    end
+
     RunService.RenderStepped:Connect(function()
         local t = tick()
-        for i, espada in pairs(espadas) do
+        -- Capa balançando
+        if capa then
+            capa.CFrame = torso.CFrame * CFrame.new(0,-1,0) * CFrame.Angles(0, math.sin(t*2)*0.25, 0)
+        end
+        -- Espadas girando
+        for _, espada in pairs(espadas) do
             espada.part.CFrame = torso.CFrame * CFrame.new(
                 espada.distancia*math.cos(t + espada.angulo),
                 1.5,
                 espada.distancia*math.sin(t + espada.angulo)
             )
         end
+        -- Elmo rotativo flutuante
         if elmo then
-            elmo.CFrame = head.CFrame * CFrame.Angles(0, t*1.5, 0)
+            elmo.CFrame = head.CFrame * CFrame.new(0,0.2*math.sin(t*2),0) * CFrame.Angles(0, t*1.5, 0)
+        end
+        -- Partículas piscando
+        for _, p in pairs(particulas) do
+            p.part.CFrame = torso.CFrame * CFrame.new(p.offset)
+            p.part.BrickColor = BrickColor.Random()
+            p.part.Transparency = 0.3 + 0.7*math.abs(math.sin(t*3))
+        end
+        -- Brilho pulsante nas peças
+        for _, part in pairs(armaduraParts) do
+            part.Transparency = 0.2 + 0.2*math.abs(math.sin(t*3))
         end
     end)
-
-    -- Efeito brilho pulsante
-    for _, part in pairs(armaduraParts) do
-        RunService.RenderStepped:Connect(function()
-            local alpha = (math.sin(tick()*3)+1)/2*0.3 + 0.2
-            part.Transparency = alpha
-        end)
-    end
 end
 
 -- Desativar armadura
 local function desativarArmadura()
     for _, part in pairs(armaduraParts) do part:Destroy() end
     for _, espada in pairs(espadas) do espada.part:Destroy() end
+    for _, p in pairs(particulas) do p.part:Destroy() end
     armaduraParts = {}
     espadas = {}
+    particulas = {}
     capa = nil
     elmo = nil
 end
 
 -- Mudar cor da armadura
 local function mudarCor(cor)
-    for _, part in pairs(armaduraParts) do
-        part.BrickColor = BrickColor.new(cor)
-    end
-    for _, espada in pairs(espadas) do
-        espada.part.BrickColor = BrickColor.new(cor)
-    end
+    for _, part in pairs(armaduraParts) do part.BrickColor = BrickColor.new(cor) end
+    for _, espada in pairs(espadas) do espada.part.BrickColor = BrickColor.new(cor) end
+    for _, p in pairs(particulas) do p.part.BrickColor = BrickColor.new(cor) end
 end
 
 -- GUI
 local gui = Instance.new("ScreenGui")
-gui.Name = "ArmaduraGUI"
+gui.Name = "ArmaduraUltraGUI"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
 local btnToggle = Instance.new("TextButton")
-btnToggle.Size = UDim2.new(0,200,0,50)
+btnToggle.Size = UDim2.new(0,220,0,50)
 btnToggle.Position = UDim2.new(0,10,0,10)
-btnToggle.Text = "Ativar/Desativar Armadura Épica"
+btnToggle.Text = "Ativar/Desativar Armadura Ultra"
 btnToggle.BackgroundColor3 = Color3.fromRGB(0,150,255)
 btnToggle.TextColor3 = Color3.new(1,1,1)
 btnToggle.Font = Enum.Font.SourceSansBold
@@ -145,7 +166,7 @@ btnToggle.TextScaled = true
 btnToggle.Parent = gui
 
 local btnCor = Instance.new("TextButton")
-btnCor.Size = UDim2.new(0,200,0,50)
+btnCor.Size = UDim2.new(0,220,0,50)
 btnCor.Position = UDim2.new(0,10,0,70)
 btnCor.Text = "Mudar Cor"
 btnCor.BackgroundColor3 = Color3.fromRGB(255,100,50)
