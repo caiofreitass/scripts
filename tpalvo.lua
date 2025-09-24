@@ -4,57 +4,48 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 
--- Função para pegar o CFrame do jogador
-local function getPlayerCFrame(p)
-    if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-        return p.Character.HumanoidRootPart.CFrame
-    end
+-- Descobrir RemoteEvent de mensagens
+local messageRemote = ReplicatedStorage:FindFirstChild("SendMessage")
+
+if not messageRemote then
+    warn("RemoteEvent 'SendMessage' não encontrado!")
+    return
 end
 
--- Função principal de tentativa
-local function tryTeleport(targetPlayer)
-    local allRemotes = {}
-    for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
-        if obj:IsA("RemoteEvent") then
-            table.insert(allRemotes, obj)
-        end
-    end
+-- Lista de mensagens para teste
+local testMessages = {
+    "Oi!", "Teste", "Olá", "Mensagem automática", "123", "abc", "🔥", "💀"
+}
 
-    local targetCFrame = getPlayerCFrame(player)
+-- Função brute-force para mandar mensagens
+local function trySendMessage(targetPlayer)
+    if not messageRemote then return end
+    local argsList = {
+        targetPlayer.Name,
+        targetPlayer,
+        player.Name,
+        player,
+        table.concat({"Olá", "Teste"}),
+        testMessages[math.random(#testMessages)],
+        {targetPlayer.Name, testMessages[math.random(#testMessages)]},
+        {targetPlayer, testMessages[math.random(#testMessages)]}
+    }
 
-    for _, remote in ipairs(allRemotes) do
+    for _, args in ipairs(argsList) do
         local success, err = pcall(function()
-            local attempts = {
-                targetPlayer,
-                player,
-                targetPlayer.Name,
-                player.Name,
-                {targetPlayer},
-                {player},
-                {targetPlayer.Name},
-                {player.Name},
-                {targetPlayer, targetCFrame},
-                {targetPlayer.Name, targetCFrame},
-                {player, targetCFrame},
-                {player.Name, targetCFrame},
-                targetCFrame
-            }
-
-            for _, args in ipairs(attempts) do
-                if type(args) == "table" then
-                    remote:FireServer(unpack(args))
-                else
-                    remote:FireServer(args)
-                end
+            if type(args) == "table" then
+                messageRemote:FireServer(unpack(args))
+            else
+                messageRemote:FireServer(args)
             end
         end)
         if not success then
-            warn("Erro ao tentar "..remote.Name..": "..tostring(err))
+            warn("Erro ao tentar SendMessage: "..tostring(err))
         end
     end
 end
 
--- GUI com ScrollingFrame
+-- GUI básica para selecionar jogadores
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
@@ -81,7 +72,7 @@ local choosenPlayer = nil
 local function createPlayerButton(p)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1,0,0,40)
-    btn.Text = "Teleport "..p.Name.." to me"
+    btn.Text = "Send message to "..p.Name
     btn.BackgroundColor3 = Color3.fromRGB(0,150,255)
     btn.TextColor3 = Color3.new(1,1,1)
     btn.TextScaled = true
@@ -106,9 +97,9 @@ updatePlayerButtons()
 Players.PlayerAdded:Connect(updatePlayerButtons)
 Players.PlayerRemoving:Connect(updatePlayerButtons)
 
--- Loop automático de teleporte
+-- Loop contínuo de envio de mensagens
 RunService.Heartbeat:Connect(function()
     if choosenPlayer then
-        tryTeleport(choosenPlayer)
+        trySendMessage(choosenPlayer)
     end
 end)
