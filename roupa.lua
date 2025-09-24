@@ -18,6 +18,7 @@ local armaduraParts = {}
 local capa, elmo
 local espadas = {}
 local particulas = {}
+local ataques = {}
 
 -- Função para criar parte visual
 local function criarParte(parteBase, tamanho, cor, offset, transpar)
@@ -69,7 +70,25 @@ local function criarParticula(offset)
     table.insert(particulas, {part=part, offset=offset})
 end
 
--- Ativar armadura ultra-épica
+-- Função criar efeito de ataque (raio)
+local function criarAtaque()
+    local part = Instance.new("Part")
+    part.Size = Vector3.new(0.2,5,0.2)
+    part.Anchored = true
+    part.CanCollide = false
+    part.Material = Enum.Material.Neon
+    part.BrickColor = BrickColor.Random()
+    part.Transparency = 0.3
+    part.Parent = workspace
+    table.insert(ataques, part)
+
+    -- Tween para animação do raio
+    local tween = TweenService:Create(part, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size=Vector3.new(0.2,10,0.2)})
+    tween:Play()
+    task.delay(0.5, function() part:Destroy() end)
+end
+
+-- Ativar armadura final
 local function ativarArmadura()
     if #armaduraParts > 0 then return end
 
@@ -94,7 +113,7 @@ local function ativarArmadura()
     criarEspada(3, math.pi, "Bright green")
     criarEspada(3, math.pi*1.5, "Bright yellow")
 
-    -- Partículas neon saindo do torso
+    -- Partículas neon
     for i=1,8 do
         criarParticula(Vector3.new(math.random(-1,1),math.random(0,2),math.random(-1,1)))
     end
@@ -135,9 +154,11 @@ local function desativarArmadura()
     for _, part in pairs(armaduraParts) do part:Destroy() end
     for _, espada in pairs(espadas) do espada.part:Destroy() end
     for _, p in pairs(particulas) do p.part:Destroy() end
+    for _, atk in pairs(ataques) do atk:Destroy() end
     armaduraParts = {}
     espadas = {}
     particulas = {}
+    ataques = {}
     capa = nil
     elmo = nil
 end
@@ -155,6 +176,7 @@ gui.Name = "ArmaduraUltraGUI"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
+-- Botões
 local btnToggle = Instance.new("TextButton")
 btnToggle.Size = UDim2.new(0,220,0,50)
 btnToggle.Position = UDim2.new(0,10,0,10)
@@ -175,6 +197,16 @@ btnCor.Font = Enum.Font.SourceSansBold
 btnCor.TextScaled = true
 btnCor.Parent = gui
 
+local btnAtaque = Instance.new("TextButton")
+btnAtaque.Size = UDim2.new(0,220,0,50)
+btnAtaque.Position = UDim2.new(0,10,0,130)
+btnAtaque.Text = "Ativar Ataque de Raio"
+btnAtaque.BackgroundColor3 = Color3.fromRGB(50,255,50)
+btnAtaque.TextColor3 = Color3.new(1,1,1)
+btnAtaque.Font = Enum.Font.SourceSansBold
+btnAtaque.TextScaled = true
+btnAtaque.Parent = gui
+
 local cores = {"Bright blue","Bright red","Bright green","Bright yellow","Bright purple","Bright orange"}
 local indice = 1
 
@@ -191,5 +223,14 @@ btnCor.MouseButton1Click:Connect(function()
         mudarCor(cores[indice])
         indice = indice + 1
         if indice > #cores then indice = 1 end
+    end
+end)
+
+btnAtaque.MouseButton1Click:Connect(function()
+    if #armaduraParts > 0 then
+        -- Cria múltiplos raios saindo das mãos
+        for i=1,4 do
+            criarAtaque()
+        end
     end
 end)
