@@ -3,29 +3,10 @@ local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
--- Função para esperar o personagem
-local function getHRP()
-    local character = player.Character or player.CharacterAdded:Wait()
-    return character:WaitForChild("HumanoidRootPart")
-end
-
--- Função de teleport
-local function teleportTo(targetPlayer)
-    if not targetPlayer.Character then
-        targetPlayer.CharacterAdded:Wait()
-    end
-
-    local targetHRP = targetPlayer.Character:WaitForChild("HumanoidRootPart")
-    local hrp = getHRP()
-    if hrp and targetHRP then
-        hrp.CFrame = targetHRP.CFrame + Vector3.new(0,3,0)
-    end
-end
-
 -- GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "TPGui"
-screenGui.Enabled = false
+screenGui.Enabled = true
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local tpButton = Instance.new("TextButton")
@@ -50,11 +31,8 @@ local UIListLayout = Instance.new("UIListLayout")
 UIListLayout.Padding = UDim.new(0,5)
 UIListLayout.Parent = listFrame
 
--- Botão TP
-tpButton.MouseButton1Click:Connect(function()
-    listFrame.Visible = not listFrame.Visible
-    listFrame.CanvasSize = UDim2.new(0,0,0,#Players:GetPlayers()*35)
-
+-- Atualiza lista de jogadores
+local function updatePlayerList()
     -- Limpa lista antiga
     for _, child in pairs(listFrame:GetChildren()) do
         if child:IsA("TextButton") then
@@ -62,7 +40,6 @@ tpButton.MouseButton1Click:Connect(function()
         end
     end
 
-    -- Cria botões para cada jogador (exceto você)
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= player then
             local btn = Instance.new("TextButton")
@@ -75,11 +52,25 @@ tpButton.MouseButton1Click:Connect(function()
             btn.Parent = listFrame
 
             btn.MouseButton1Click:Connect(function()
-                teleportTo(p)
+                if p.Character and p.Character:FindFirstChild("HumanoidRootPart") and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    player.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame + Vector3.new(0,3,0)
+                end
             end)
         end
     end
+
+    listFrame.CanvasSize = UDim2.new(0,0,0,#Players:GetPlayers()*35)
+end
+
+-- Botão de mostrar/ocultar lista
+tpButton.MouseButton1Click:Connect(function()
+    listFrame.Visible = not listFrame.Visible
+    updatePlayerList()
 end)
+
+-- Atualiza lista quando jogadores entram ou saem
+Players.PlayerAdded:Connect(updatePlayerList)
+Players.PlayerRemoving:Connect(updatePlayerList)
 
 -- Tecla P para mostrar/esconder GUI
 UserInputService.InputBegan:Connect(function(input, gp)
