@@ -7,12 +7,12 @@ local player = Players.LocalPlayer
 
 -- GUI principal
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ScriptExplorer"
+screenGui.Name = "AdvancedExplorer"
 screenGui.Enabled = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0,600,0,500)
+mainFrame.Size = UDim2.new(0,800,0,500)
 mainFrame.Position = UDim2.new(0,10,0,10)
 mainFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 mainFrame.BorderSizePixel = 0
@@ -31,9 +31,9 @@ scriptButton.Position = UDim2.new(0,130,0,5)
 scriptButton.Text = "Scripts"
 scriptButton.Parent = mainFrame
 
--- Scroll frame
+-- Scroll frame da hierarquia
 local scrollFrame = Instance.new("ScrollingFrame")
-scrollFrame.Size = UDim2.new(0.6,0,1,-40)
+scrollFrame.Size = UDim2.new(0.4,0,1,-40)
 scrollFrame.Position = UDim2.new(0,0,0,40)
 scrollFrame.CanvasSize = UDim2.new(0,0,0,0)
 scrollFrame.ScrollBarThickness = 10
@@ -45,26 +45,74 @@ uiList.Padding = UDim.new(0,2)
 uiList.SortOrder = Enum.SortOrder.LayoutOrder
 uiList.Parent = scrollFrame
 
--- Preview frame
+-- Frame lateral para preview e propriedades
 local previewFrame = Instance.new("Frame")
-previewFrame.Size = UDim2.new(0.4,0,1,0)
-previewFrame.Position = UDim2.new(0.6,0,0,0)
+previewFrame.Size = UDim2.new(0.6,0,1,0)
+previewFrame.Position = UDim2.new(0.4,0,0,0)
 previewFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 previewFrame.Parent = mainFrame
 
+-- Scroll para preview
+local previewScroll = Instance.new("ScrollingFrame")
+previewScroll.Size = UDim2.new(1,-10,1,-10)
+previewScroll.Position = UDim2.new(0,5,0,5)
+previewScroll.CanvasSize = UDim2.new(0,0,0,0)
+previewScroll.ScrollBarThickness = 10
+previewScroll.BackgroundTransparency = 1
+previewScroll.Parent = previewFrame
+
+-- Label para mostrar conteúdo do script ou propriedades
 local previewLabel = Instance.new("TextLabel")
-previewLabel.Size = UDim2.new(1,0,1,0)
+previewLabel.Size = UDim2.new(1,0,0,0)
 previewLabel.BackgroundTransparency = 1
-previewLabel.TextColor3 = Color3.new(1,1,1)
+previewLabel.TextColor3 = Color3.fromRGB(255,255,255)
 previewLabel.Font = Enum.Font.Code
 previewLabel.TextXAlignment = Enum.TextXAlignment.Left
 previewLabel.TextYAlignment = Enum.TextYAlignment.Top
 previewLabel.RichText = true
 previewLabel.TextWrapped = true
 previewLabel.Text = ""
-previewLabel.Parent = previewFrame
+previewLabel.Parent = previewScroll
 
--- Função para criar botão
+-- Atualiza scroll lateral
+local function updatePreviewCanvas()
+    local textSize = previewLabel.TextBounds.Y
+    previewLabel.Size = UDim2.new(1,0,0,textSize)
+    previewScroll.CanvasSize = UDim2.new(0,0,0,textSize)
+end
+
+-- Atualiza scroll da hierarquia
+local function updateCanvas()
+    local total = 0
+    for _, c in pairs(scrollFrame:GetChildren()) do
+        if c:IsA("TextButton") then
+            total = total + c.AbsoluteSize.Y + uiList.Padding.Offset
+        end
+    end
+    scrollFrame.CanvasSize = UDim2.new(0,0,0,total)
+end
+
+-- Função para listar propriedades do objeto
+local function listProperties(obj)
+    local text = ""
+    for _, prop in pairs(obj:GetAttributes()) do
+        text = text..prop.."\n"
+    end
+    if obj:IsA("BasePart") then
+        text = text.."\nSize: "..tostring(obj.Size)
+        text = text.."\nPosition: "..tostring(obj.Position)
+        text = text.."\nColor: "..tostring(obj.Color)
+        text = text.."\nAnchored: "..tostring(obj.Anchored)
+        text = text.."\nCanCollide: "..tostring(obj.CanCollide)
+    elseif obj:IsA("GuiObject") then
+        text = text.."\nSize: "..tostring(obj.Size)
+        text = text.."\nPosition: "..tostring(obj.Position)
+        text = text.."\nVisible: "..tostring(obj.Visible)
+    end
+    return text
+end
+
+-- Função recursiva para criar botão
 local function createButton(obj, parent, indent)
     indent = indent or 0
     local btn = Instance.new("TextButton")
@@ -76,7 +124,6 @@ local function createButton(obj, parent, indent)
     btn.Text = (" "):rep(indent/10)..obj.Name.." ["..obj.ClassName.."]"
     btn.Parent = parent
 
-    -- Lazy loading: cria filhos ao clicar
     local expanded = false
     local childButtons = {}
 
@@ -92,21 +139,23 @@ local function createButton(obj, parent, indent)
             end
         end
         expanded = not expanded
+        updateCanvas()
     end)
 
-    -- Clique direito: preview
+    -- Clique direito: preview + propriedades ou script
     btn.MouseButton2Click:Connect(function()
         if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
             previewLabel.Text = obj.Source or "-- Sem código disponível"
         else
-            previewLabel.Text = "-- Não é um script"
+            previewLabel.Text = listProperties(obj)
         end
+        updatePreviewCanvas()
     end)
 
     return btn
 end
 
--- Coletar todos objetos
+-- Coletar objetos do Workspace e ReplicatedStorage
 local allObjects = {}
 for _, obj in pairs(Workspace:GetChildren()) do table.insert(allObjects,obj) end
 for _, obj in pairs(ReplicatedStorage:GetChildren()) do table.insert(allObjects,obj) end
@@ -139,7 +188,7 @@ end
 hierButton.MouseButton1Click:Connect(showAllHierarchy)
 scriptButton.MouseButton1Click:Connect(showAllScripts)
 
--- Tecla G para mostrar GUI
+-- Tecla G para mostrar/ocultar GUI
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.G then
