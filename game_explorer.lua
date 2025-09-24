@@ -8,28 +8,39 @@ local player = Players.LocalPlayer
 -- GUI principal
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ScriptExplorerGui"
+screenGui.Enabled = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 -- Frame principal
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0,450,0,500)
+mainFrame.Size = UDim2.new(0,500,0,500)
 mainFrame.Position = UDim2.new(0,10,0,10)
 mainFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 
--- Botão para mostrar apenas scripts
+-- Botões no topo
+local hierButton = Instance.new("TextButton")
+hierButton.Size = UDim2.new(0,120,0,30)
+hierButton.Position = UDim2.new(0,5,0,5)
+hierButton.Text = "Hierarquia"
+hierButton.TextScaled = true
+hierButton.Font = Enum.Font.SourceSansBold
+hierButton.BackgroundColor3 = Color3.fromRGB(0,120,200)
+hierButton.TextColor3 = Color3.fromRGB(255,255,255)
+hierButton.Parent = mainFrame
+
 local scriptButton = Instance.new("TextButton")
-scriptButton.Size = UDim2.new(0,100,0,30)
-scriptButton.Position = UDim2.new(0,5,0,5)
+scriptButton.Size = UDim2.new(0,120,0,30)
+scriptButton.Position = UDim2.new(0,130,0,5)
 scriptButton.Text = "Scripts"
 scriptButton.TextScaled = true
 scriptButton.Font = Enum.Font.SourceSansBold
-scriptButton.BackgroundColor3 = Color3.fromRGB(0,120,200)
+scriptButton.BackgroundColor3 = Color3.fromRGB(0,150,0)
 scriptButton.TextColor3 = Color3.fromRGB(255,255,255)
 scriptButton.Parent = mainFrame
 
--- Scroll para hierarquia
+-- Scroll para hierarquia / scripts
 local scrollFrame = Instance.new("ScrollingFrame")
 scrollFrame.Size = UDim2.new(0.6,0,1,-40)
 scrollFrame.Position = UDim2.new(0,0,0,40)
@@ -43,7 +54,7 @@ uiList.Padding = UDim.new(0,2)
 uiList.SortOrder = Enum.SortOrder.LayoutOrder
 uiList.Parent = scrollFrame
 
--- Frame lateral para preview de scripts
+-- Preview frame
 local previewFrame = Instance.new("Frame")
 previewFrame.Size = UDim2.new(0.4,0,1,0)
 previewFrame.Position = UDim2.new(0.6,0,0,0)
@@ -66,7 +77,7 @@ previewLabel.TextStrokeTransparency = 0.8
 previewLabel.Text = ""
 previewLabel.Parent = previewFrame
 
--- Função para atualizar Canvas
+-- Atualiza Canvas
 local function updateCanvas()
     local total = 0
     for _, c in pairs(scrollFrame:GetChildren()) do
@@ -77,7 +88,7 @@ local function updateCanvas()
     scrollFrame.CanvasSize = UDim2.new(0,0,0,total)
 end
 
--- Função recursiva para criar botões
+-- Cria botões recursivamente
 local function createButton(obj, parent, indent, path)
     indent = indent or 0
     path = path or obj.Name
@@ -111,7 +122,7 @@ local function createButton(obj, parent, indent, path)
         updateCanvas()
     end)
 
-    -- Clique direito: mostrar conteúdo do script no preview
+    -- Clique direito: preview de script
     btn.MouseButton2Click:Connect(function()
         if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
             previewLabel.Text = obj.Source or "-- Sem código disponível"
@@ -124,13 +135,27 @@ local function createButton(obj, parent, indent, path)
     return btn
 end
 
--- Função para popular a lista de scripts
+-- Popula lista inteira (para hierarquia)
 local allObjects = {}
 for _, obj in pairs(Workspace:GetChildren()) do
     table.insert(allObjects, obj)
 end
 for _, obj in pairs(ReplicatedStorage:GetChildren()) do
     table.insert(allObjects, obj)
+end
+
+local function showAllHierarchy()
+    scrollFrame:ClearAllChildren()
+    for _, obj in pairs(allObjects) do
+        local function addRecursively(o, parent, path)
+            path = path or o.Name
+            createButton(o, parent, 0, path)
+            for _, child in pairs(o:GetChildren()) do
+                addRecursively(child, parent, path.."."..child.Name)
+            end
+        end
+        addRecursively(obj, scrollFrame)
+    end
 end
 
 local function showAllScripts()
@@ -149,10 +174,9 @@ local function showAllScripts()
     end
 end
 
--- Clique no botão “Scripts”
-scriptButton.MouseButton1Click:Connect(function()
-    showAllScripts()
-end)
+-- Conecta botões
+hierButton.MouseButton1Click:Connect(showAllHierarchy)
+scriptButton.MouseButton1Click:Connect(showAllScripts)
 
 -- Tecla G para mostrar/esconder GUI
 UserInputService.InputBegan:Connect(function(input, gp)
