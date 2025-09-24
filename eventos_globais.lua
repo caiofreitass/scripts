@@ -49,9 +49,10 @@ if RunService:IsServer() then
 
     Eventos["Som global"] = function()
         local sound = Instance.new("Sound", workspace)
-        sound.SoundId = "rbxassetid://1846088038"
+        sound.SoundId = "rbxassetid://1846088038" -- ID do som fornecido
+        sound.Volume = 1
         sound:Play()
-        Debris:AddItem(sound,5)
+        Debris:AddItem(sound, 5)
     end
 
     Eventos["Spawn: Bola gigante"] = function()
@@ -106,10 +107,10 @@ UIListLayout.Parent = scrollFrame
 
 local EventosLocais = {
     ["Mensagem: Rapadura Mole"] = "Mensagem: Rapadura Mole",
-    ["Buff: Velocidade +50"] = "BuffVelocidade",
-    ["Buff: Pulo +50"] = "BuffPulo",
-    ["Som global"] = "SomGlobal",
-    ["Spawn: Bola gigante"] = "SpawnBola"
+    ["Buff: Velocidade +50"] = "Buff: Velocidade +50",
+    ["Buff: Pulo +50"] = "Buff: Pulo +50",
+    ["Som global"] = "Som global",
+    ["Spawn: Bola gigante"] = "Spawn: Bola gigante"
 }
 
 mainButton.MouseButton1Click:Connect(function()
