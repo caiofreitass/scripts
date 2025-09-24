@@ -107,10 +107,25 @@ spawnButton.MouseButton1Click:Connect(function()
     spawnBlock()
 end)
 
+
+-- Atalho Q para mostrar/ocultar a GUI
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.Q then
+        screenGui.Enabled = not screenGui.Enabled
+    end
+end)
+
+
+
+
 -- Atalho B para spawnar
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.B then
+
+
+
         spawnBlock()
     end
 end)
