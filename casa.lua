@@ -4,7 +4,7 @@
 
 local Players = game:GetService("Players")
 
-local NOME_ALVO = "mita_2060"
+local NOME_ALVO = "smmsmstest"
 local DISTANCIA_FINAL = 3
 
 -- Cria texto flutuante
