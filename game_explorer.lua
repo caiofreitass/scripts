@@ -1,12 +1,13 @@
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local ServerStorage = game:GetService("ServerStorage")
 
 local player = Players.LocalPlayer
 
 -- GUI principal
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "GameExplorerGui"
+screenGui.Name = "ClonerGui"
 screenGui.Enabled = true
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
@@ -17,7 +18,7 @@ mainFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 
--- ScrollingFrame para hierarquia
+-- ScrollingFrame
 local scrollFrame = Instance.new("ScrollingFrame")
 scrollFrame.Size = UDim2.new(1,0,1,0)
 scrollFrame.CanvasSize = UDim2.new(0,0,0,0)
@@ -30,7 +31,7 @@ uiList.Padding = UDim.new(0,2)
 uiList.SortOrder = Enum.SortOrder.LayoutOrder
 uiList.Parent = scrollFrame
 
--- Atualiza automaticamente o CanvasSize do scroll
+-- Atualiza CanvasSize
 local function updateCanvasSize()
     local total = 0
     for _, child in pairs(scrollFrame:GetChildren()) do
@@ -41,7 +42,7 @@ local function updateCanvasSize()
     scrollFrame.CanvasSize = UDim2.new(0,0,0,total)
 end
 
--- Função recursiva para criar botões
+-- Função recursiva para criar botões de clonagem
 local function createButtonForObject(obj, parent, indent)
     indent = indent or 0
     local btn = Instance.new("TextButton")
@@ -58,6 +59,7 @@ local function createButtonForObject(obj, parent, indent)
     local expanded = false
     local childButtons = {}
 
+    -- Ao clicar, expande filhos ou clona
     btn.MouseButton1Click:Connect(function()
         if #childButtons == 0 then
             -- cria botões filhos
@@ -73,6 +75,14 @@ local function createButtonForObject(obj, parent, indent)
         end
         expanded = not expanded
         updateCanvasSize()
+    end)
+
+    -- Botão direito para clonar
+    btn.MouseButton2Click:Connect(function()
+        local cloneFolder = ServerStorage:FindFirstChild("ClonedWorkspace") or Instance.new("Folder", ServerStorage)
+        cloneFolder.Name = "ClonedWorkspace"
+        obj:Clone().Parent = cloneFolder
+        print("Clonado:", obj.Name)
     end)
 
     updateCanvasSize()
