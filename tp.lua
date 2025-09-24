@@ -1,36 +1,9 @@
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
-local meuNome = "caiorimador"
 
--- Cria RemoteEvent se não existir
-local remote = ReplicatedStorage:FindFirstChild("TeleportToMe")
-if not remote then
-    remote = Instance.new("RemoteEvent")
-    remote.Name = "TeleportToMe"
-    remote.Parent = ReplicatedStorage
-end
-
--- SERVER: teleporta outro jogador para "caiorimador"
-if RunService:IsServer() then
-    remote.OnServerEvent:Connect(function(sender, targetName)
-        local target = Players:FindFirstChild(targetName)
-        local receiver = Players:FindFirstChild(meuNome)
-        if target and receiver and target.Character and receiver.Character then
-            local hrpTarget = target.Character:FindFirstChild("HumanoidRootPart")
-            local hrpReceiver = receiver.Character:FindFirstChild("HumanoidRootPart")
-            if hrpTarget and hrpReceiver then
-                hrpTarget.CFrame = hrpReceiver.CFrame + Vector3.new(0,3,0)
-            end
-        end
-    end)
-    return
-end
-
--- CLIENT: GUI para selecionar jogadores
+-- GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "TPGui"
 screenGui.Enabled = false
@@ -58,6 +31,20 @@ local UIListLayout = Instance.new("UIListLayout")
 UIListLayout.Padding = UDim.new(0,5)
 UIListLayout.Parent = listFrame
 
+-- Função de teleport
+local function teleportTo(targetPlayer)
+    local character = player.Character
+    local targetChar = targetPlayer.Character
+    if character and targetChar then
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+        if hrp and targetHRP then
+            hrp.CFrame = targetHRP.CFrame + Vector3.new(0,3,0) -- um pouco acima do jogador
+        end
+    end
+end
+
+-- Botão TP
 tpButton.MouseButton1Click:Connect(function()
     listFrame.Visible = not listFrame.Visible
     listFrame.CanvasSize = UDim2.new(0,0,0,#Players:GetPlayers()*35)
@@ -82,13 +69,13 @@ tpButton.MouseButton1Click:Connect(function()
             btn.Parent = listFrame
 
             btn.MouseButton1Click:Connect(function()
-                remote:FireServer(p.Name) -- envia o nome do jogador que será teleportado
+                teleportTo(p)
             end)
         end
     end
 end)
 
--- Tecla P para mostrar/esconder botão
+-- Tecla P para mostrar/esconder GUI
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.P then
