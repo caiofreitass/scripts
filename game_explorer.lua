@@ -109,7 +109,7 @@ local function listProperties(obj)
     return text
 end
 
--- Função recursiva para criar botões
+-- Função recursiva para criar botões **já totalmente expandidos**
 local function createButton(obj, parent, indent)
     indent = indent or 0
     local btn = Instance.new("TextButton")
@@ -121,24 +121,6 @@ local function createButton(obj, parent, indent)
     btn.Text = (" "):rep(indent/10)..obj.Name.." ["..obj.ClassName.."]"
     btn.Parent = parent
 
-    local expanded = false
-    local childButtons = {}
-
-    btn.MouseButton1Click:Connect(function()
-        if #childButtons == 0 then
-            for _, child in pairs(obj:GetChildren()) do
-                local b = createButton(child, parent, indent + 20)
-                table.insert(childButtons, b)
-            end
-        else
-            for _, b in pairs(childButtons) do
-                b.Visible = not expanded
-            end
-        end
-        expanded = not expanded
-        updateCanvas()
-    end)
-
     -- Clique direito: preview/propriedades
     btn.MouseButton2Click:Connect(function()
         if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
@@ -149,10 +131,15 @@ local function createButton(obj, parent, indent)
         updatePreviewCanvas()
     end)
 
+    -- Cria **todos os filhos imediatamente**
+    for _, child in pairs(obj:GetChildren()) do
+        createButton(child, parent, indent + 20)
+    end
+
     return btn
 end
 
--- Função para carregar todos os objetos recursivamente
+-- Carregar todos objetos recursivamente
 local function loadAllObjects()
     local allObjects = {}
     local function addRecursively(parent)
@@ -168,15 +155,16 @@ end
 
 local allObjects = loadAllObjects()
 
--- Mostrar hierarquia
+-- Mostrar hierarquia **totalmente expandida**
 local function showAllHierarchy()
     scrollFrame:ClearAllChildren()
     for _, obj in pairs(allObjects) do
         createButton(obj, scrollFrame, 0)
     end
+    updateCanvas()
 end
 
--- Mostrar apenas scripts
+-- Mostrar apenas scripts **totalmente expandida**
 local function showAllScripts()
     scrollFrame:ClearAllChildren()
     for _, obj in pairs(allObjects) do
@@ -184,6 +172,7 @@ local function showAllScripts()
             createButton(obj, scrollFrame, 0)
         end
     end
+    updateCanvas()
 end
 
 -- Conecta botões
