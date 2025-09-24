@@ -1,69 +1,85 @@
--- teleport_mita.lua
--- Teleporta o jogador "mita_2060" para perto de quem usar o script
--- e mostra texto flutuante "rapadura mole" acima dele
-
+-- Services
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
 
-local NOME_ALVO = "smmsmstest"
-local DISTANCIA_FINAL = 3
+-- RemoteEvents
+local tpRemote = ReplicatedStorage:FindFirstChild("TeleportToMe")
+local chatRemote = ReplicatedStorage:FindFirstChild("SendMessage")
 
--- Cria texto flutuante
-local function criarTextoAcimaJogador(alvo, texto)
-	if not alvo.Character or not alvo.Character:FindFirstChild("Head") then return end
-	local head = alvo.Character.Head
+if not tpRemote then warn("RemoteEvent 'TeleportToMe' não encontrado!") end
+if not chatRemote then warn("RemoteEvent 'SendMessage' não encontrado!") end
 
-	-- Remove GUI antiga
-	if head:FindFirstChild("NomeGui") then
-		head.NomeGui:Destroy()
-	end
+-- GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "PlayerToolsGUI"
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
-	local billboard = Instance.new("BillboardGui")
-	billboard.Name = "NomeGui"
-	billboard.Size = UDim2.new(0, 200, 0, 50)
-	billboard.Adornee = head
-	billboard.AlwaysOnTop = true
-	billboard.StudsOffset = Vector3.new(0, 2, 0)
-	billboard.Parent = head
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 350, 0, 600)
+mainFrame.Position = UDim2.new(0, 50, 0, 50)
+mainFrame.BackgroundColor3 = Color3.fromRGB(50,50,50)
+mainFrame.Parent = screenGui
 
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, 0, 1, 0)
-	label.BackgroundTransparency = 1
-	label.TextColor3 = Color3.new(1, 0, 0)
-	label.TextStrokeTransparency = 0
-	label.TextScaled = true
-	label.Font = Enum.Font.FredokaOne
-	label.Text = texto
-	label.Parent = billboard
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0,5)
+UIListLayout.Parent = mainFrame
+
+-- Caixa de texto para mensagem
+local messageBox = Instance.new("TextBox")
+messageBox.Size = UDim2.new(1,0,0,40)
+messageBox.PlaceholderText = "Digite sua mensagem aqui..."
+messageBox.Text = ""
+messageBox.ClearTextOnFocus = false
+messageBox.Font = Enum.Font.SourceSans
+messageBox.TextScaled = true
+messageBox.BackgroundColor3 = Color3.fromRGB(255,255,255)
+messageBox.TextColor3 = Color3.fromRGB(0,0,0)
+messageBox.Parent = mainFrame
+
+-- Função para criar botão
+local function createButton(title, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1,0,0,40)
+    btn.Text = title
+    btn.Font = Enum.Font.SourceSans
+    btn.TextScaled = true
+    btn.BackgroundColor3 = Color3.fromRGB(0,150,255)
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    btn.Parent = mainFrame
+    btn.MouseButton1Click:Connect(callback)
 end
 
--- Teleportar jogador alvo
-local function teleportarAlvo(player)
-	if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
-	local hrp = player.Character.HumanoidRootPart
-	local posPlayer = hrp.Position
+-- Atualiza lista de jogadores
+local function updatePlayerButtons()
+    -- Remove botões antigos (exceto a TextBox)
+    for _, child in pairs(mainFrame:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
 
-	local alvo = Players:FindFirstChild(NOME_ALVO)
-	if alvo and alvo.Character and alvo.Character:FindFirstChild("HumanoidRootPart") then
-		local humanoid = alvo.Character.Humanoid
-		local destino = posPlayer + Vector3.new(0, 0, -DISTANCIA_FINAL)
-
-		humanoid.PlatformStand = true
-		alvo.Character:SetPrimaryPartCFrame(CFrame.new(destino))
-		task.delay(0.1, function()
-			humanoid.PlatformStand = false
-		end)
-
-		criarTextoAcimaJogador(alvo, "rapadura mole")
-	end
+    -- Cria novos botões
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player then
+            -- Teleportar para você
+            createButton("Teleport "..p.Name.." to me", function()
+                if tpRemote then tpRemote:FireServer(p.Name) end
+            end)
+            -- Enviar mensagem
+            createButton("Send message to "..p.Name, function()
+                if chatRemote then
+                    local msg = messageBox.Text
+                    if msg ~= "" then
+                        chatRemote:FireServer(msg)
+                    end
+                end
+            end)
+        end
+    end
 end
 
--- Tecla K detectada pelo jogador que executa
-game:GetService("UserInputService").InputBegan:Connect(function(input, gp)
-	if gp then return end
-	if input.KeyCode == Enum.KeyCode.K then
-		local player = Players.LocalPlayer
-		if player then
-			teleportarAlvo(player)
-		end
-	end
-end)
+-- Inicializa lista
+updatePlayerButtons()
+
+-- Atualiza quando jogadores entram ou saem
+Players.PlayerAdded:Connect(updatePlayerButtons)
+Players.PlayerRemoving:Connect(updatePlayerButtons)
