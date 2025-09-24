@@ -7,7 +7,7 @@ local player = Players.LocalPlayer
 
 -- GUI principal
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AdvancedExplorer"
+screenGui.Name = "FullExplorer"
 screenGui.Enabled = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
@@ -45,14 +45,13 @@ uiList.Padding = UDim.new(0,2)
 uiList.SortOrder = Enum.SortOrder.LayoutOrder
 uiList.Parent = scrollFrame
 
--- Frame lateral para preview e propriedades
+-- Frame lateral para preview/propriedades
 local previewFrame = Instance.new("Frame")
 previewFrame.Size = UDim2.new(0.6,0,1,0)
 previewFrame.Position = UDim2.new(0.4,0,0,0)
 previewFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 previewFrame.Parent = mainFrame
 
--- Scroll para preview
 local previewScroll = Instance.new("ScrollingFrame")
 previewScroll.Size = UDim2.new(1,-10,1,-10)
 previewScroll.Position = UDim2.new(0,5,0,5)
@@ -61,7 +60,6 @@ previewScroll.ScrollBarThickness = 10
 previewScroll.BackgroundTransparency = 1
 previewScroll.Parent = previewFrame
 
--- Label para mostrar conteúdo do script ou propriedades
 local previewLabel = Instance.new("TextLabel")
 previewLabel.Size = UDim2.new(1,0,0,0)
 previewLabel.BackgroundTransparency = 1
@@ -81,7 +79,6 @@ local function updatePreviewCanvas()
     previewScroll.CanvasSize = UDim2.new(0,0,0,textSize)
 end
 
--- Atualiza scroll da hierarquia
 local function updateCanvas()
     local total = 0
     for _, c in pairs(scrollFrame:GetChildren()) do
@@ -92,7 +89,7 @@ local function updateCanvas()
     scrollFrame.CanvasSize = UDim2.new(0,0,0,total)
 end
 
--- Função para listar propriedades do objeto
+-- Função para listar propriedades
 local function listProperties(obj)
     local text = ""
     for _, prop in pairs(obj:GetAttributes()) do
@@ -112,7 +109,7 @@ local function listProperties(obj)
     return text
 end
 
--- Função recursiva para criar botão
+-- Função recursiva para criar botões
 local function createButton(obj, parent, indent)
     indent = indent or 0
     local btn = Instance.new("TextButton")
@@ -142,7 +139,7 @@ local function createButton(obj, parent, indent)
         updateCanvas()
     end)
 
-    -- Clique direito: preview + propriedades ou script
+    -- Clique direito: preview/propriedades
     btn.MouseButton2Click:Connect(function()
         if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
             previewLabel.Text = obj.Source or "-- Sem código disponível"
@@ -155,10 +152,21 @@ local function createButton(obj, parent, indent)
     return btn
 end
 
--- Coletar objetos do Workspace e ReplicatedStorage
-local allObjects = {}
-for _, obj in pairs(Workspace:GetChildren()) do table.insert(allObjects,obj) end
-for _, obj in pairs(ReplicatedStorage:GetChildren()) do table.insert(allObjects,obj) end
+-- Função para carregar todos os objetos recursivamente
+local function loadAllObjects()
+    local allObjects = {}
+    local function addRecursively(parent)
+        table.insert(allObjects, parent)
+        for _, child in pairs(parent:GetChildren()) do
+            addRecursively(child)
+        end
+    end
+    for _, obj in pairs(Workspace:GetChildren()) do addRecursively(obj) end
+    for _, obj in pairs(ReplicatedStorage:GetChildren()) do addRecursively(obj) end
+    return allObjects
+end
+
+local allObjects = loadAllObjects()
 
 -- Mostrar hierarquia
 local function showAllHierarchy()
@@ -171,16 +179,10 @@ end
 -- Mostrar apenas scripts
 local function showAllScripts()
     scrollFrame:ClearAllChildren()
-    local function addScriptsRecursively(o, parent)
-        if o:IsA("Script") or o:IsA("LocalScript") or o:IsA("ModuleScript") then
-            createButton(o, parent)
-        end
-        for _, child in pairs(o:GetChildren()) do
-            addScriptsRecursively(child, parent)
-        end
-    end
     for _, obj in pairs(allObjects) do
-        addScriptsRecursively(obj, scrollFrame)
+        if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
+            createButton(obj, scrollFrame, 0)
+        end
     end
 end
 
