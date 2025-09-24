@@ -1,16 +1,9 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerStorage = game:GetService("ServerStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
-
--- Pasta para guardar scripts clonados
-local clonedFolder = ServerStorage:FindFirstChild("ClonedScripts") or Instance.new("Folder")
-clonedFolder.Name = "ClonedScripts"
-clonedFolder.Parent = ServerStorage
-clonedFolder:ClearAllChildren()
 
 -- GUI principal
 local screenGui = Instance.new("ScreenGui")
@@ -24,7 +17,6 @@ mainFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 
--- ScrollingFrame
 local scrollFrame = Instance.new("ScrollingFrame")
 scrollFrame.Size = UDim2.new(1,0,1,0)
 scrollFrame.CanvasSize = UDim2.new(0,0,0,0)
@@ -37,7 +29,6 @@ uiList.Padding = UDim.new(0,2)
 uiList.SortOrder = Enum.SortOrder.LayoutOrder
 uiList.Parent = scrollFrame
 
--- Atualiza CanvasSize
 local function updateCanvas()
     local total = 0
     for _, c in pairs(scrollFrame:GetChildren()) do
@@ -48,9 +39,10 @@ local function updateCanvas()
     scrollFrame.CanvasSize = UDim2.new(0,0,0,total)
 end
 
--- Função recursiva para criar botões de objetos
-local function createButton(obj, parent, indent)
+-- Função recursiva para criar botões
+local function createButton(obj, parent, indent, path)
     indent = indent or 0
+    path = path or obj.Name
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1,-indent,0,25)
     btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
@@ -65,11 +57,11 @@ local function createButton(obj, parent, indent)
     local expanded = false
     local childButtons = {}
 
-    -- Clique esquerdo: expande/contrai filhos
+    -- Clique esquerdo: expandir/contrair
     btn.MouseButton1Click:Connect(function()
         if #childButtons == 0 then
             for _, child in pairs(obj:GetChildren()) do
-                local b = createButton(child, parent, indent + 20)
+                local b = createButton(child, parent, indent + 20, path.."."..child.Name)
                 table.insert(childButtons, b)
             end
         else
@@ -81,11 +73,11 @@ local function createButton(obj, parent, indent)
         updateCanvas()
     end)
 
-    -- Clique direito: clona script
+    -- Clique direito: copiar caminho completo para clipboard
     btn.MouseButton2Click:Connect(function()
         if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
-            obj:Clone().Parent = clonedFolder
-            print("Clonado:", obj:GetFullName())
+            setclipboard(path)
+            print("Caminho copiado para o clipboard:", path)
         end
     end)
 
