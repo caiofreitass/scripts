@@ -6,10 +6,10 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
 -- RemoteEvent para teleporte seguro
-local remote = ReplicatedStorage:FindFirstChild("TeleportPlayer")
+local remote = ReplicatedStorage:FindFirstChild("TeleportToMe")
 if not remote then
     remote = Instance.new("RemoteEvent")
-    remote.Name = "TeleportPlayer"
+    remote.Name = "TeleportToMe"
     remote.Parent = ReplicatedStorage
 end
 
@@ -66,21 +66,22 @@ tpButton.MouseButton1Click:Connect(function()
             btn.Parent = listFrame
 
             btn.MouseButton1Click:Connect(function()
-                remote:FireServer(p.Name)
+                remote:FireServer(p.Name, player.Name) -- envia target e quem recebe
             end)
         end
     end
 end)
 
--- SERVER: Recebe evento e teleporta jogador
+-- SERVER: Recebe evento e teleporta o jogador selecionado para você
 if RunService:IsServer() then
-    remote.OnServerEvent:Connect(function(sender, targetName)
+    remote.OnServerEvent:Connect(function(sender, targetName, receiverName)
         local target = Players:FindFirstChild(targetName)
-        if sender.Character and target and target.Character then
-            local hrpSender = sender.Character:FindFirstChild("HumanoidRootPart")
+        local receiver = Players:FindFirstChild(receiverName)
+        if target and receiver and target.Character and receiver.Character then
             local hrpTarget = target.Character:FindFirstChild("HumanoidRootPart")
-            if hrpSender and hrpTarget then
-                hrpSender.CFrame = hrpTarget.CFrame + Vector3.new(0,3,0)
+            local hrpReceiver = receiver.Character:FindFirstChild("HumanoidRootPart")
+            if hrpTarget and hrpReceiver then
+                hrpTarget.CFrame = hrpReceiver.CFrame + Vector3.new(0,3,0)
             end
         end
     end)
@@ -93,4 +94,3 @@ UserInputService.InputBegan:Connect(function(input, gp)
         screenGui.Enabled = not screenGui.Enabled
     end
 end)
-
