@@ -1,3 +1,4 @@
+-- Game Explorer completo com filhos indentados à direita
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -5,9 +6,9 @@ local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
--- GUI principal
+-- Cria GUI principal
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "IndentedExplorer"
+screenGui.Name = "GameExplorer"
 screenGui.Enabled = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
@@ -89,7 +90,7 @@ local function updateCanvas()
     scrollFrame.CanvasSize = UDim2.new(0,0,0,total)
 end
 
--- Função para listar propriedades
+-- Lista propriedades do objeto
 local function listProperties(obj)
     local text = ""
     for _, prop in pairs(obj:GetAttributes()) do
@@ -109,38 +110,58 @@ local function listProperties(obj)
     return text
 end
 
--- Função recursiva para criar botões com indentação
-local function createButton(obj, parent, indent)
+-- Função para criar botão com filhos indentados à direita
+local function createButton(obj, parent, indent, path)
     indent = indent or 0
+    path = path or obj.Name
+
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1,-indent,0,25)
     btn.Position = UDim2.new(0,indent,0,0)
     btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
     btn.TextColor3 = Color3.new(1,1,1)
     btn.Font = Enum.Font.SourceSans
+    btn.TextScaled = true
     btn.TextXAlignment = Enum.TextXAlignment.Left
     btn.Text = (" "):rep(indent/10)..obj.Name.." ["..obj.ClassName.."]"
+    btn.Visible = true
     btn.Parent = parent
 
-    -- Clique direito: preview/propriedades
-    btn.MouseButton2Click:Connect(function()
-        if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
-            previewLabel.Text = obj.Source or "-- Sem código disponível"
+    local expanded = false
+    local childButtons = {}
+
+    -- Clique esquerdo: expandir/contrair filhos
+    btn.MouseButton1Click:Connect(function()
+        if #childButtons == 0 then
+            local lastY = btn.Position.Y.Offset + btn.Size.Y.Offset
+            for _, child in pairs(obj:GetChildren()) do
+                local childBtn = createButton(child, parent, indent + 20, path.."."..child.Name)
+                childBtn.Position = UDim2.new(0, indent + 20, 0, lastY)
+                lastY = lastY + childBtn.AbsoluteSize.Y + 2
+                table.insert(childButtons, childBtn)
+            end
         else
-            previewLabel.Text = listProperties(obj)
+            for _, b in pairs(childButtons) do
+                b.Visible = not expanded
+            end
         end
-        updatePreviewCanvas()
+        expanded = not expanded
+        updateCanvas()
     end)
 
-    -- Cria filhos imediatamente, indentados
-    for _, child in pairs(obj:GetChildren()) do
-        createButton(child, parent, indent + 20)
-    end
+    -- Clique direito: copiar caminho completo
+    btn.MouseButton2Click:Connect(function()
+        if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
+            setclipboard(path)
+            print("Caminho copiado para o clipboard:", path)
+        end
+    end)
 
+    updateCanvas()
     return btn
 end
 
--- Carregar todos objetos recursivamente
+-- Carrega todos objetos recursivamente
 local function loadAllObjects()
     local allObjects = {}
     local function addRecursively(parent)
@@ -156,7 +177,7 @@ end
 
 local allObjects = loadAllObjects()
 
--- Mostrar hierarquia totalmente expandida
+-- Mostrar hierarquia
 local function showAllHierarchy()
     scrollFrame:ClearAllChildren()
     for _, obj in pairs(allObjects) do
@@ -165,7 +186,7 @@ local function showAllHierarchy()
     updateCanvas()
 end
 
--- Mostrar scripts totalmente expandida
+-- Mostrar scripts
 local function showAllScripts()
     scrollFrame:ClearAllChildren()
     for _, obj in pairs(allObjects) do
@@ -176,7 +197,7 @@ local function showAllScripts()
     updateCanvas()
 end
 
--- Conecta botões
+-- Botões topo
 hierButton.MouseButton1Click:Connect(showAllHierarchy)
 scriptButton.MouseButton1Click:Connect(showAllScripts)
 
