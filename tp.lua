@@ -5,7 +5,7 @@ local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
--- RemoteEvent para teleporte seguro
+-- Cria RemoteEvent se não existir
 local remote = ReplicatedStorage:FindFirstChild("TeleportToMe")
 if not remote then
     remote = Instance.new("RemoteEvent")
@@ -13,7 +13,22 @@ if not remote then
     remote.Parent = ReplicatedStorage
 end
 
--- GUI principal (inicialmente invisível)
+-- SERVER: se rodar no servidor, conecta teleporte
+if RunService:IsServer() then
+    remote.OnServerEvent:Connect(function(sender, targetName)
+        local target = Players:FindFirstChild(targetName)
+        if target and target.Character and sender.Character then
+            local hrpTarget = target.Character:FindFirstChild("HumanoidRootPart")
+            local hrpSender = sender.Character:FindFirstChild("HumanoidRootPart")
+            if hrpTarget and hrpSender then
+                hrpTarget.CFrame = hrpSender.CFrame + Vector3.new(0,3,0)
+            end
+        end
+    end)
+    return
+end
+
+-- CLIENT: GUI + envio do pedido
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "TPGui"
 screenGui.Enabled = false
@@ -66,26 +81,11 @@ tpButton.MouseButton1Click:Connect(function()
             btn.Parent = listFrame
 
             btn.MouseButton1Click:Connect(function()
-                remote:FireServer(p.Name, player.Name) -- envia target e quem recebe
+                remote:FireServer(p.Name)
             end)
         end
     end
 end)
-
--- SERVER: Recebe evento e teleporta o jogador selecionado para você
-if RunService:IsServer() then
-    remote.OnServerEvent:Connect(function(sender, targetName, receiverName)
-        local target = Players:FindFirstChild(targetName)
-        local receiver = Players:FindFirstChild(receiverName)
-        if target and receiver and target.Character and receiver.Character then
-            local hrpTarget = target.Character:FindFirstChild("HumanoidRootPart")
-            local hrpReceiver = receiver.Character:FindFirstChild("HumanoidRootPart")
-            if hrpTarget and hrpReceiver then
-                hrpTarget.CFrame = hrpReceiver.CFrame + Vector3.new(0,3,0)
-            end
-        end
-    end)
-end
 
 -- Detecta tecla P para mostrar/esconder o botão
 UserInputService.InputBegan:Connect(function(input, gp)
