@@ -10,6 +10,7 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ScriptExplorerGui"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
+-- Frame principal
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0,400,0,500)
 mainFrame.Position = UDim2.new(0,10,0,10)
@@ -17,8 +18,10 @@ mainFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 
+-- Scroll para hierarquia
 local scrollFrame = Instance.new("ScrollingFrame")
-scrollFrame.Size = UDim2.new(1,0,1,0)
+scrollFrame.Size = UDim2.new(0.6,0,1,0)
+scrollFrame.Position = UDim2.new(0,0,0,0)
 scrollFrame.CanvasSize = UDim2.new(0,0,0,0)
 scrollFrame.ScrollBarThickness = 10
 scrollFrame.BackgroundTransparency = 1
@@ -29,6 +32,32 @@ uiList.Padding = UDim.new(0,2)
 uiList.SortOrder = Enum.SortOrder.LayoutOrder
 uiList.Parent = scrollFrame
 
+-- Frame lateral para preview
+local previewFrame = Instance.new("Frame")
+previewFrame.Size = UDim2.new(0.4,0,1,0)
+previewFrame.Position = UDim2.new(0.6,0,0,0)
+previewFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+previewFrame.BorderSizePixel = 0
+previewFrame.Parent = mainFrame
+
+local previewLabel = Instance.new("TextLabel")
+previewLabel.Size = UDim2.new(1,-10,1,-10)
+previewLabel.Position = UDim2.new(0,5,0,5)
+previewLabel.BackgroundTransparency = 1
+previewLabel.TextColor3 = Color3.fromRGB(255,255,255)
+previewLabel.TextScaled = false
+previewLabel.TextXAlignment = Enum.TextXAlignment.Left
+previewLabel.TextYAlignment = Enum.TextYAlignment.Top
+previewLabel.Font = Enum.Font.Code
+previewLabel.RichText = true
+previewLabel.TextWrapped = true
+previewLabel.Text = ""
+previewLabel.TextXAlignment = Enum.TextXAlignment.Left
+previewLabel.TextYAlignment = Enum.TextYAlignment.Top
+previewLabel.TextStrokeTransparency = 0.8
+previewLabel.Parent = previewFrame
+
+-- Atualiza CanvasSize
 local function updateCanvas()
     local total = 0
     for _, c in pairs(scrollFrame:GetChildren()) do
@@ -73,11 +102,12 @@ local function createButton(obj, parent, indent, path)
         updateCanvas()
     end)
 
-    -- Clique direito: copiar caminho completo para clipboard
+    -- Clique direito: mostrar conteúdo do script no preview
     btn.MouseButton2Click:Connect(function()
         if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
-            setclipboard(path)
-            print("Caminho copiado para o clipboard:", path)
+            previewLabel.Text = obj.Source or "-- Sem código disponível"
+        else
+            previewLabel.Text = "-- Não é um script"
         end
     end)
 
