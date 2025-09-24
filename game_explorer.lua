@@ -19,7 +19,7 @@ mainFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 
--- Botões no topo
+-- Botões topo
 local hierButton = Instance.new("TextButton")
 hierButton.Size = UDim2.new(0,120,0,30)
 hierButton.Position = UDim2.new(0,5,0,5)
@@ -40,7 +40,7 @@ scriptButton.BackgroundColor3 = Color3.fromRGB(0,150,0)
 scriptButton.TextColor3 = Color3.fromRGB(255,255,255)
 scriptButton.Parent = mainFrame
 
--- Scroll para hierarquia / scripts
+-- Scroll hierarquia/scripts
 local scrollFrame = Instance.new("ScrollingFrame")
 scrollFrame.Size = UDim2.new(0.6,0,1,-40)
 scrollFrame.Position = UDim2.new(0,0,0,40)
@@ -54,7 +54,7 @@ uiList.Padding = UDim.new(0,2)
 uiList.SortOrder = Enum.SortOrder.LayoutOrder
 uiList.Parent = scrollFrame
 
--- Frame lateral para preview de scripts
+-- Preview frame
 local previewFrame = Instance.new("Frame")
 previewFrame.Size = UDim2.new(0.4,0,1,0)
 previewFrame.Position = UDim2.new(0.6,0,0,0)
@@ -62,7 +62,6 @@ previewFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 previewFrame.BorderSizePixel = 0
 previewFrame.Parent = mainFrame
 
--- Scrolling frame para o conteúdo do script
 local previewScroll = Instance.new("ScrollingFrame")
 previewScroll.Size = UDim2.new(1,-10,1,-10)
 previewScroll.Position = UDim2.new(0,5,0,5)
@@ -85,14 +84,12 @@ previewLabel.TextStrokeTransparency = 0.8
 previewLabel.Text = ""
 previewLabel.Parent = previewScroll
 
--- Atualiza canvas size do preview
 local function updatePreviewCanvas()
     local textSize = previewLabel.TextBounds.Y
     previewLabel.Size = UDim2.new(1,0,0,textSize)
     previewScroll.CanvasSize = UDim2.new(0,0,0,textSize)
 end
 
--- Atualiza canvas do scroll principal
 local function updateCanvas()
     local total = 0
     for _, c in pairs(scrollFrame:GetChildren()) do
@@ -103,7 +100,7 @@ local function updateCanvas()
     scrollFrame.CanvasSize = UDim2.new(0,0,0,total)
 end
 
--- Cria botões recursivamente
+-- Função recursiva com lazy loading
 local function createButton(obj, parent, indent, path)
     indent = indent or 0
     path = path or obj.Name
@@ -121,7 +118,7 @@ local function createButton(obj, parent, indent, path)
     local expanded = false
     local childButtons = {}
 
-    -- Clique esquerdo: expandir/contrair
+    -- Expandir apenas ao clicar
     btn.MouseButton1Click:Connect(function()
         if #childButtons == 0 then
             for _, child in pairs(obj:GetChildren()) do
@@ -137,7 +134,7 @@ local function createButton(obj, parent, indent, path)
         updateCanvas()
     end)
 
-    -- Clique direito: mostrar conteúdo do script
+    -- Preview do script
     btn.MouseButton2Click:Connect(function()
         if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
             previewLabel.Text = obj.Source or "-- Sem código disponível"
@@ -147,7 +144,7 @@ local function createButton(obj, parent, indent, path)
         updatePreviewCanvas()
     end)
 
-    -- Duplo clique para copiar conteúdo para clipboard
+    -- Copiar conteúdo
     btn.MouseButton2Click:Connect(function()
         if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
             setclipboard(obj.Source or "")
@@ -159,7 +156,7 @@ local function createButton(obj, parent, indent, path)
     return btn
 end
 
--- Coleta todos objetos
+-- Coleta objetos
 local allObjects = {}
 for _, obj in pairs(Workspace:GetChildren()) do
     table.insert(allObjects, obj)
@@ -168,39 +165,29 @@ for _, obj in pairs(ReplicatedStorage:GetChildren()) do
     table.insert(allObjects, obj)
 end
 
--- Mostrar Hierarquia completa
 local function showAllHierarchy()
     scrollFrame:ClearAllChildren()
     for _, obj in pairs(allObjects) do
-        local function addRecursively(o, parent, path)
-            path = path or o.Name
-            createButton(o, parent, 0, path)
-            for _, child in pairs(o:GetChildren()) do
-                addRecursively(child, parent, path.."."..child.Name)
-            end
-        end
-        addRecursively(obj, scrollFrame)
+        createButton(obj, scrollFrame, 0, obj.Name)
     end
 end
 
--- Mostrar apenas Scripts
 local function showAllScripts()
     scrollFrame:ClearAllChildren()
-    for _, obj in pairs(allObjects) do
-        local function addScriptsRecursively(o, parent, path)
-            path = path or o.Name
-            if o:IsA("Script") or o:IsA("LocalScript") or o:IsA("ModuleScript") then
-                createButton(o, parent, 0, path)
-            end
-            for _, child in pairs(o:GetChildren()) do
-                addScriptsRecursively(child, parent, path.."."..child.Name)
-            end
+    local function addScriptsRecursively(o, parent)
+        if o:IsA("Script") or o:IsA("LocalScript") or o:IsA("ModuleScript") then
+            createButton(o, parent)
         end
+        for _, child in pairs(o:GetChildren()) do
+            addScriptsRecursively(child, parent)
+        end
+    end
+    for _, obj in pairs(allObjects) do
         addScriptsRecursively(obj, scrollFrame)
     end
 end
 
--- Conecta botões
+-- Botões
 hierButton.MouseButton1Click:Connect(showAllHierarchy)
 scriptButton.MouseButton1Click:Connect(showAllScripts)
 
