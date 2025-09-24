@@ -1,0 +1,116 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+
+-- GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.Name = "RemoteGUI"
+
+-- Botão para listar RemoteEvents
+local listButton = Instance.new("TextButton")
+listButton.Size = UDim2.new(0, 200, 0, 50)
+listButton.Position = UDim2.new(0, 10, 0, 10)
+listButton.Text = "Listar RemoteEvents"
+listButton.BackgroundColor3 = Color3.fromRGB(0,150,255)
+listButton.TextColor3 = Color3.new(1,1,1)
+listButton.Parent = screenGui
+
+local outputFrame = Instance.new("ScrollingFrame")
+outputFrame.Size = UDim2.new(0, 300, 0, 400)
+outputFrame.Position = UDim2.new(0, 10, 0, 70)
+outputFrame.BackgroundColor3 = Color3.fromRGB(50,50,50)
+outputFrame.CanvasSize = UDim2.new(0,0,0,0)
+outputFrame.Parent = screenGui
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0,5)
+UIListLayout.Parent = outputFrame
+
+listButton.MouseButton1Click:Connect(function()
+    -- Limpa lista antiga
+    for _, child in pairs(outputFrame:GetChildren()) do
+        if child:IsA("TextLabel") then
+            child:Destroy()
+        end
+    end
+    
+    local y = 0
+    for _, obj in pairs(ReplicatedStorage:GetChildren()) do
+        if obj:IsA("RemoteEvent") then
+            local lbl = Instance.new("TextLabel")
+            lbl.Size = UDim2.new(1,0,0,30)
+            lbl.Position = UDim2.new(0,0,0,y)
+            lbl.Text = obj.Name
+            lbl.Font = Enum.Font.SourceSans
+            lbl.TextScaled = true
+            lbl.BackgroundColor3 = Color3.fromRGB(0,100,0)
+            lbl.TextColor3 = Color3.new(1,1,1)
+            lbl.Parent = outputFrame
+            y += 35
+        end
+    end
+    outputFrame.CanvasSize = UDim2.new(0,0,0,y)
+end)
+
+-- Lista de nomes comuns de RemoteEvents de construção
+local possibleNames = {
+    "PlaceBlock",
+    "BuildBlock",
+    "AddPart",
+    "CreateBlock",
+    "SpawnBlock",
+    "AddBuildingPart",
+    "PlacePart",
+    "BlockEvent"
+}
+
+-- Tenta achar o primeiro RemoteEvent existente
+local remote = nil
+for _, name in ipairs(possibleNames) do
+    local found = ReplicatedStorage:FindFirstChild(name)
+    if found and found:IsA("RemoteEvent") then
+        remote = found
+        print("Usando RemoteEvent:", name)
+        break
+    end
+end
+
+if not remote then
+    warn("Nenhum RemoteEvent compatível encontrado!")
+end
+
+-- Função para spawnar um bloco na frente do jogador
+local function spawnBlock()
+    if not remote then return end
+    if not hrp then
+        hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if not hrp then warn("HumanoidRootPart não encontrado!") return end
+    end
+    local position = hrp.Position + hrp.CFrame.LookVector * 5
+    remote:FireServer(CFrame.new(position))
+    print("Bloco enviado!")
+end
+
+-- Botão para spawnar bloco
+local spawnButton = Instance.new("TextButton")
+spawnButton.Size = UDim2.new(0,200,0,50)
+spawnButton.Position = UDim2.new(0,220,0,10)
+spawnButton.Text = "Spawnar Bloco"
+spawnButton.BackgroundColor3 = Color3.fromRGB(255,100,0)
+spawnButton.TextColor3 = Color3.new(1,1,1)
+spawnButton.Parent = screenGui
+
+spawnButton.MouseButton1Click:Connect(function()
+    spawnBlock()
+end)
+
+-- Atalho B para spawnar
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.B then
+        spawnBlock()
+    end
+end)
