@@ -12,16 +12,27 @@ screenGui.Parent = player:WaitForChild("PlayerGui")
 
 -- Frame principal
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0,400,0,500)
+mainFrame.Size = UDim2.new(0,450,0,500)
 mainFrame.Position = UDim2.new(0,10,0,10)
 mainFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 
+-- Botão para mostrar apenas scripts
+local scriptButton = Instance.new("TextButton")
+scriptButton.Size = UDim2.new(0,100,0,30)
+scriptButton.Position = UDim2.new(0,5,0,5)
+scriptButton.Text = "Scripts"
+scriptButton.TextScaled = true
+scriptButton.Font = Enum.Font.SourceSansBold
+scriptButton.BackgroundColor3 = Color3.fromRGB(0,120,200)
+scriptButton.TextColor3 = Color3.fromRGB(255,255,255)
+scriptButton.Parent = mainFrame
+
 -- Scroll para hierarquia
 local scrollFrame = Instance.new("ScrollingFrame")
-scrollFrame.Size = UDim2.new(0.6,0,1,0)
-scrollFrame.Position = UDim2.new(0,0,0,0)
+scrollFrame.Size = UDim2.new(0.6,0,1,-40)
+scrollFrame.Position = UDim2.new(0,0,0,40)
 scrollFrame.CanvasSize = UDim2.new(0,0,0,0)
 scrollFrame.ScrollBarThickness = 10
 scrollFrame.BackgroundTransparency = 1
@@ -32,7 +43,7 @@ uiList.Padding = UDim.new(0,2)
 uiList.SortOrder = Enum.SortOrder.LayoutOrder
 uiList.Parent = scrollFrame
 
--- Frame lateral para preview
+-- Frame lateral para preview de scripts
 local previewFrame = Instance.new("Frame")
 previewFrame.Size = UDim2.new(0.4,0,1,0)
 previewFrame.Position = UDim2.new(0.6,0,0,0)
@@ -45,19 +56,17 @@ previewLabel.Size = UDim2.new(1,-10,1,-10)
 previewLabel.Position = UDim2.new(0,5,0,5)
 previewLabel.BackgroundTransparency = 1
 previewLabel.TextColor3 = Color3.fromRGB(255,255,255)
+previewLabel.Font = Enum.Font.Code
 previewLabel.TextScaled = false
 previewLabel.TextXAlignment = Enum.TextXAlignment.Left
 previewLabel.TextYAlignment = Enum.TextYAlignment.Top
-previewLabel.Font = Enum.Font.Code
 previewLabel.RichText = true
 previewLabel.TextWrapped = true
-previewLabel.Text = ""
-previewLabel.TextXAlignment = Enum.TextXAlignment.Left
-previewLabel.TextYAlignment = Enum.TextYAlignment.Top
 previewLabel.TextStrokeTransparency = 0.8
+previewLabel.Text = ""
 previewLabel.Parent = previewFrame
 
--- Atualiza CanvasSize
+-- Função para atualizar Canvas
 local function updateCanvas()
     local total = 0
     for _, c in pairs(scrollFrame:GetChildren()) do
@@ -115,13 +124,35 @@ local function createButton(obj, parent, indent, path)
     return btn
 end
 
--- Inicializa GUI com Workspace e ReplicatedStorage
+-- Função para popular a lista de scripts
+local allObjects = {}
 for _, obj in pairs(Workspace:GetChildren()) do
-    createButton(obj, scrollFrame)
+    table.insert(allObjects, obj)
 end
 for _, obj in pairs(ReplicatedStorage:GetChildren()) do
-    createButton(obj, scrollFrame)
+    table.insert(allObjects, obj)
 end
+
+local function showAllScripts()
+    scrollFrame:ClearAllChildren()
+    for _, obj in pairs(allObjects) do
+        local function addScriptsRecursively(o, parent, path)
+            path = path or o.Name
+            if o:IsA("Script") or o:IsA("LocalScript") or o:IsA("ModuleScript") then
+                createButton(o, parent, 0, path)
+            end
+            for _, child in pairs(o:GetChildren()) do
+                addScriptsRecursively(child, parent, path.."."..child.Name)
+            end
+        end
+        addScriptsRecursively(obj, scrollFrame)
+    end
+end
+
+-- Clique no botão “Scripts”
+scriptButton.MouseButton1Click:Connect(function()
+    showAllScripts()
+end)
 
 -- Tecla G para mostrar/esconder GUI
 UserInputService.InputBegan:Connect(function(input, gp)
