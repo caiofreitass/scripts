@@ -8,6 +8,7 @@ local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPa
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player:WaitForChild("PlayerGui")
 screenGui.Name = "RemoteGUI"
+screenGui.Enabled = false -- Começa invisível
 
 -- Botão para listar RemoteEvents
 local listButton = Instance.new("TextButton")
@@ -107,25 +108,18 @@ spawnButton.MouseButton1Click:Connect(function()
     spawnBlock()
 end)
 
+-- Atalho B para spawnar bloco
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.B then
+        spawnBlock()
+    end
+end)
 
--- Atalho Q para mostrar/ocultar a GUI
+-- Atalho Q para abrir/fechar a GUI
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.Q then
         screenGui.Enabled = not screenGui.Enabled
-    end
-end)
-
-
-
-
--- Atalho B para spawnar
-UserInputService.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.KeyCode == Enum.KeyCode.B then
-
-
-
-        spawnBlock()
     end
 end)
