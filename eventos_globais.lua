@@ -49,7 +49,7 @@ if RunService:IsServer() then
 
     Eventos["Som global"] = function()
         local sound = Instance.new("Sound", workspace)
-        sound.SoundId = "rbxassetid://1843520969"
+        sound.SoundId = "rbxassetid://1846088038"
         sound:Play()
         Debris:AddItem(sound,5)
     end
