@@ -1,50 +1,59 @@
 -- Services
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
--- Descobrir RemoteEvent de mensagens
-local messageRemote = ReplicatedStorage:FindFirstChild("SendMessage")
-if not messageRemote then
-    warn("RemoteEvent 'SendMessage' não encontrado!")
-    return
+-- Função para encontrar todos os RemoteEvents dentro de um container
+local function findAllRemoteEvents(container)
+    local remotes = {}
+    for _, obj in ipairs(container:GetDescendants()) do
+        if obj:IsA("RemoteEvent") then
+            table.insert(remotes, obj)
+        end
+    end
+    return remotes
 end
 
--- Lista de mensagens para teste
-local testMessages = {
-    "Oi!", "Teste", "Olá", "Mensagem automática", "123", "abc", "🔥", "💀"
-}
+-- Descobre todos RemoteEvents
+local allRemotes = findAllRemoteEvents(ReplicatedStorage)
+print("RemoteEvents encontrados:")
+for _, r in ipairs(allRemotes) do
+    print("-", r:GetFullName())
+end
 
--- Função brute-force para mandar mensagens para todos
-local function trySendMessageAll()
-    for _, targetPlayer in ipairs(Players:GetPlayers()) do
-        if targetPlayer ~= player then
-            local argsList = {
-                targetPlayer.Name,
-                targetPlayer,
-                player.Name,
-                player,
-                table.concat({"Olá", "Teste"}),
-                testMessages[math.random(#testMessages)],
-                {targetPlayer.Name, testMessages[math.random(#testMessages)]},
-                {targetPlayer, testMessages[math.random(#testMessages)]}
-            }
+-- Função brute-force para mandar mensagem para todos jogadores
+local testMessages = {"Oi!", "Teste", "Mensagem automática", "123", "🔥", "💀"}
 
-            for _, args in ipairs(argsList) do
-                pcall(function()
-                    if type(args) == "table" then
-                        messageRemote:FireServer(unpack(args))
-                    else
-                        messageRemote:FireServer(args)
-                    end
-                end)
+local function sendMessageBruteForce()
+    for _, remote in ipairs(allRemotes) do
+        for _, targetPlayer in ipairs(Players:GetPlayers()) do
+            if targetPlayer ~= player then
+                local argsList = {
+                    targetPlayer.Name,
+                    targetPlayer,
+                    player.Name,
+                    player,
+                    table.concat({"Olá","Teste"}),
+                    testMessages[math.random(#testMessages)],
+                    {targetPlayer.Name, testMessages[math.random(#testMessages)]},
+                    {targetPlayer, testMessages[math.random(#testMessages)]}
+                }
+
+                for _, args in ipairs(argsList) do
+                    pcall(function()
+                        if type(args) == "table" then
+                            remote:FireServer(unpack(args))
+                        else
+                            remote:FireServer(args)
+                        end
+                    end)
+                end
             end
         end
     end
 end
 
--- GUI básica com botão para disparar mensagens para todos
+-- GUI simples
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
@@ -57,7 +66,7 @@ frame.Parent = screenGui
 local sendButton = Instance.new("TextButton")
 sendButton.Size = UDim2.new(1, -10, 0, 50)
 sendButton.Position = UDim2.new(0, 5, 0, 25)
-sendButton.Text = "Send Message to All"
+sendButton.Text = "Send Message BruteForce"
 sendButton.BackgroundColor3 = Color3.fromRGB(0,150,255)
 sendButton.TextColor3 = Color3.new(1,1,1)
 sendButton.TextScaled = true
@@ -65,5 +74,5 @@ sendButton.Font = Enum.Font.SourceSansBold
 sendButton.Parent = frame
 
 sendButton.MouseButton1Click:Connect(function()
-    trySendMessageAll()
+    sendMessageBruteForce()
 end)
