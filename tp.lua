@@ -13,9 +13,10 @@ if not remote then
     remote.Parent = ReplicatedStorage
 end
 
--- GUI principal
+-- GUI principal (inicialmente invisível)
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "TPGui"
+screenGui.Enabled = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local tpButton = Instance.new("TextButton")
@@ -28,7 +29,6 @@ tpButton.Font = Enum.Font.SourceSansBold
 tpButton.TextScaled = true
 tpButton.Parent = screenGui
 
--- Frame para lista de jogadores
 local listFrame = Instance.new("ScrollingFrame")
 listFrame.Size = UDim2.new(0,200,0,300)
 listFrame.Position = UDim2.new(0,10,0,70)
@@ -45,7 +45,7 @@ UIListLayout.Parent = listFrame
 tpButton.MouseButton1Click:Connect(function()
     listFrame.Visible = not listFrame.Visible
     listFrame.CanvasSize = UDim2.new(0,0,0,#Players:GetPlayers()*35)
-    
+
     -- Limpar lista antiga
     for _, child in pairs(listFrame:GetChildren()) do
         if child:IsA("TextButton") then
@@ -85,3 +85,11 @@ if RunService:IsServer() then
         end
     end)
 end
+
+-- Detecta tecla P para mostrar/esconder o botão
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.P then
+        screenGui.Enabled = not screenGui.Enabled
+    end
+end)
