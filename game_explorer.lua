@@ -7,13 +7,13 @@ local player = Players.LocalPlayer
 
 -- GUI principal
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ScriptExplorerGui"
+screenGui.Name = "AdvancedScriptExplorer"
 screenGui.Enabled = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 -- Frame principal
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0,500,0,500)
+mainFrame.Size = UDim2.new(0,600,0,500)
 mainFrame.Position = UDim2.new(0,10,0,10)
 mainFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 mainFrame.BorderSizePixel = 0
@@ -40,12 +40,12 @@ scriptButton.BackgroundColor3 = Color3.fromRGB(0,150,0)
 scriptButton.TextColor3 = Color3.fromRGB(255,255,255)
 scriptButton.Parent = mainFrame
 
--- Scroll hierarquia/scripts
+-- Scroll para hierarquia/scripts
 local scrollFrame = Instance.new("ScrollingFrame")
 scrollFrame.Size = UDim2.new(0.6,0,1,-40)
 scrollFrame.Position = UDim2.new(0,0,0,40)
 scrollFrame.CanvasSize = UDim2.new(0,0,0,0)
-scrollFrame.ScrollBarThickness = 10
+scrollFrame.ScrollBarThickness = 12
 scrollFrame.BackgroundTransparency = 1
 scrollFrame.Parent = mainFrame
 
@@ -54,7 +54,7 @@ uiList.Padding = UDim.new(0,2)
 uiList.SortOrder = Enum.SortOrder.LayoutOrder
 uiList.Parent = scrollFrame
 
--- Preview frame
+-- Frame lateral para preview
 local previewFrame = Instance.new("Frame")
 previewFrame.Size = UDim2.new(0.4,0,1,0)
 previewFrame.Position = UDim2.new(0.6,0,0,0)
@@ -62,6 +62,7 @@ previewFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 previewFrame.BorderSizePixel = 0
 previewFrame.Parent = mainFrame
 
+-- Scroll no preview
 local previewScroll = Instance.new("ScrollingFrame")
 previewScroll.Size = UDim2.new(1,-10,1,-10)
 previewScroll.Position = UDim2.new(0,5,0,5)
@@ -90,6 +91,7 @@ local function updatePreviewCanvas()
     previewScroll.CanvasSize = UDim2.new(0,0,0,textSize)
 end
 
+-- Atualiza canvas do scroll principal
 local function updateCanvas()
     local total = 0
     for _, c in pairs(scrollFrame:GetChildren()) do
@@ -100,10 +102,9 @@ local function updateCanvas()
     scrollFrame.CanvasSize = UDim2.new(0,0,0,total)
 end
 
--- Função recursiva com lazy loading
-local function createButton(obj, parent, indent, path)
+-- Função recursiva com lazy loading e destaque de scripts
+local function createButton(obj, parent, indent)
     indent = indent or 0
-    path = path or obj.Name
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1,-indent,0,25)
     btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
@@ -111,6 +112,12 @@ local function createButton(obj, parent, indent, path)
     btn.Font = Enum.Font.SourceSans
     btn.TextScaled = true
     btn.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- Destacar scripts modificáveis
+    if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
+        btn.BackgroundColor3 = Color3.fromRGB(200,100,0) -- laranja
+    end
+
     btn.Text = (" "):rep(indent/10)..obj.Name.." ["..obj.ClassName.."]"
     btn.Visible = true
     btn.Parent = parent
@@ -118,11 +125,10 @@ local function createButton(obj, parent, indent, path)
     local expanded = false
     local childButtons = {}
 
-    -- Expandir apenas ao clicar
     btn.MouseButton1Click:Connect(function()
         if #childButtons == 0 then
             for _, child in pairs(obj:GetChildren()) do
-                local b = createButton(child, parent, indent + 20, path.."."..child.Name)
+                local b = createButton(child, parent, indent + 20)
                 table.insert(childButtons, b)
             end
         else
@@ -134,7 +140,6 @@ local function createButton(obj, parent, indent, path)
         updateCanvas()
     end)
 
-    -- Preview do script
     btn.MouseButton2Click:Connect(function()
         if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
             previewLabel.Text = obj.Source or "-- Sem código disponível"
@@ -144,11 +149,9 @@ local function createButton(obj, parent, indent, path)
         updatePreviewCanvas()
     end)
 
-    -- Copiar conteúdo
     btn.MouseButton2Click:Connect(function()
         if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
             setclipboard(obj.Source or "")
-            print("Conteúdo copiado para o clipboard")
         end
     end)
 
@@ -158,17 +161,14 @@ end
 
 -- Coleta objetos
 local allObjects = {}
-for _, obj in pairs(Workspace:GetChildren()) do
-    table.insert(allObjects, obj)
-end
-for _, obj in pairs(ReplicatedStorage:GetChildren()) do
-    table.insert(allObjects, obj)
-end
+for _, obj in pairs(Workspace:GetChildren()) do table.insert(allObjects,obj) end
+for _, obj in pairs(ReplicatedStorage:GetChildren()) do table.insert(allObjects,obj) end
 
+-- Funções para mostrar
 local function showAllHierarchy()
     scrollFrame:ClearAllChildren()
     for _, obj in pairs(allObjects) do
-        createButton(obj, scrollFrame, 0, obj.Name)
+        createButton(obj, scrollFrame, 0)
     end
 end
 
@@ -187,7 +187,7 @@ local function showAllScripts()
     end
 end
 
--- Botões
+-- Conecta botões
 hierButton.MouseButton1Click:Connect(showAllHierarchy)
 scriptButton.MouseButton1Click:Connect(showAllScripts)
 
