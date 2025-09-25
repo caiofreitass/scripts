@@ -3,6 +3,10 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
+-- Limpa GUI antiga se existir
+local oldGui = player:FindFirstChild("PlayerGui"):FindFirstChild("ModernGUI")
+if oldGui then oldGui:Destroy() end
+
 -- Estados globais
 local noclipEnabled = false
 local flyEnabled = false
@@ -152,22 +156,12 @@ player.CharacterAdded:Connect(setupCharacter)
 if player.Character then setupCharacter(player.Character) end
 
 -- Eventos globais aplicando efeitos
-RunService.Stepped:Connect(function()
-    local char = player.Character
-    if char then
-        for _,part in pairs(char:GetChildren()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = not noclipEnabled
-            end
-        end
-    end
-end)
-
-RunService.RenderStepped:Connect(function()
+RunService:BindToRenderStep("FlyAndSpeed", Enum.RenderPriority.Character.Value, function()
     local char = player.Character
     if char then
         local hrp = char:FindFirstChild("HumanoidRootPart")
         local humanoid = char:FindFirstChildOfClass("Humanoid")
+        -- Fly
         if hrp and flyEnabled then
             local move = Vector3.new()
             local camCF = workspace.CurrentCamera.CFrame
@@ -179,8 +173,15 @@ RunService.RenderStepped:Connect(function()
             if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move = move - Vector3.new(0,1,0) end
             if move.Magnitude>0 then hrp.Velocity = move.Unit*flySpeed hrp.Anchored=false end
         end
+        -- Speed
         if humanoid then
             humanoid.WalkSpeed = speedEnabled and walkSpeed or 16
+        end
+        -- Noclip
+        for _,part in pairs(char:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = not noclipEnabled
+            end
         end
     end
 end)
@@ -190,13 +191,17 @@ noclipBtn.MouseButton1Click:Connect(function()
     noclipEnabled = not noclipEnabled
     noclipBtn.Text = noclipEnabled and "Noclip ON" or "Noclip OFF"
 end)
+
 flyBtn.MouseButton1Click:Connect(function()
     flyEnabled = not flyEnabled
     flyBtn.Text = flyEnabled and "Fly ON" or "Fly OFF"
     flySlider.Visible = flyEnabled
+    if flyEnabled then speedSlider.Visible = false end
 end)
+
 speedBtn.MouseButton1Click:Connect(function()
     speedEnabled = not speedEnabled
     speedBtn.Text = speedEnabled and "Speed ON" or "Speed OFF"
     speedSlider.Visible = speedEnabled
+    if speedEnabled then flySlider.Visible = false end
 end)
