@@ -1,20 +1,22 @@
--- twentyjump + Noclip + Fly + Sem dano de queda
+-- Script completo: Twentyjump + Noclip + Fly + Sem dano de queda + Vida infinita GUI
+
 local Players = game:GetService("Players")
 local UserInput = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
+-- CONFIGURAÇÕES
 local MAX_JUMPS = 100          
 local EXTRA_JUMP_POWER = 50   
 local COOLDOWN = 0.15         
+local flySpeed = 50
 
 local jumps = 0
 local lastJumpTime = 0
-
 local noclipEnabled = false
 local flyEnabled = false
-local flySpeed = 50
+local infiniteHealthEnabled = false
 
 -- GUI
 local screenGui = Instance.new("ScreenGui")
@@ -34,6 +36,7 @@ end
 
 local noclipButton = createButton("Noclip OFF", UDim2.new(0,10,0,10), Color3.fromRGB(255,0,0))
 local flyButton = createButton("Fly OFF", UDim2.new(0,10,0,60), Color3.fromRGB(0,0,255))
+local healthButton = createButton("Vida OFF", UDim2.new(0,10,0,110), Color3.fromRGB(0,255,0))
 
 -- Alternar noclip
 noclipButton.MouseButton1Click:Connect(function()
@@ -45,6 +48,12 @@ end)
 flyButton.MouseButton1Click:Connect(function()
     flyEnabled = not flyEnabled
     flyButton.Text = flyEnabled and "Fly ON" or "Fly OFF"
+end)
+
+-- Alternar vida infinita
+healthButton.MouseButton1Click:Connect(function()
+    infiniteHealthEnabled = not infiniteHealthEnabled
+    healthButton.Text = infiniteHealthEnabled and "Vida ON" or "Vida OFF"
 end)
 
 -- Noclip
@@ -90,7 +99,6 @@ local function onCharacterAdded(character)
     lastJumpTime = 0
 
     humanoid.StateChanged:Connect(function(_, new)
-        -- Resetar pulos
         if new == Enum.HumanoidStateType.Landed or new == Enum.HumanoidStateType.Running then
             jumps = 0
         end
@@ -107,6 +115,7 @@ local function onCharacterAdded(character)
         end
     end)
 
+    -- Twentyjump
     UserInput.JumpRequest:Connect(function()
         if not humanoid or not hrp then return end
         local now = tick()
@@ -130,3 +139,11 @@ if player.Character then
     onCharacterAdded(player.Character)
 end
 player.CharacterAdded:Connect(onCharacterAdded)
+
+-- Vida infinita
+RunService.Stepped:Connect(function()
+    if infiniteHealthEnabled and player.Character and player.Character:FindFirstChild("Humanoid") then
+        local humanoid = player.Character.Humanoid
+        humanoid.Health = humanoid.MaxHealth
+    end
+end)
