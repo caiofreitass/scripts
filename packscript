@@ -20,7 +20,7 @@ screenGui.Parent = player:WaitForChild("PlayerGui")
 
 -- Frame principal
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0,300,0,500)
+mainFrame.Size = UDim2.new(0,260,0,450)
 mainFrame.Position = UDim2.new(0,10,0,50)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 mainFrame.BorderSizePixel = 0
@@ -36,7 +36,7 @@ layout.Parent = mainFrame
 -- Função para criar botões
 local function createButton(text, color, parent)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0,260,0,35)
+    btn.Size = UDim2.new(0,240,0,35)
     btn.Text = text
     btn.BackgroundColor3 = color
     btn.TextColor3 = Color3.new(1,1,1)
@@ -45,51 +45,6 @@ local function createButton(text, color, parent)
     btn.BorderSizePixel = 0
     btn.Parent = parent
     return btn
-end
-
--- Função para criar sliders
-local function createSlider(labelText, min, max, default, parent, callback)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0,260,0,50)
-    frame.BackgroundColor3 = Color3.fromRGB(50,50,50)
-    frame.BorderSizePixel = 0
-    frame.Parent = parent
-
-    local label = Instance.new("TextLabel")
-    label.Text = labelText..": "..default
-    label.Size = UDim2.new(1,0,0,20)
-    label.TextColor3 = Color3.new(1,1,1)
-    label.BackgroundTransparency = 1
-    label.Font = Enum.Font.SourceSansBold
-    label.TextScaled = true
-    label.Parent = frame
-
-    local slider = Instance.new("TextButton")
-    slider.Size = UDim2.new(1,0,0,20)
-    slider.Position = UDim2.new(0,0,0,25)
-    slider.BackgroundColor3 = Color3.fromRGB(100,100,100)
-    slider.Text = ""
-    slider.BorderSizePixel = 0
-    slider.Parent = frame
-
-    local dragging = false
-    slider.MouseButton1Down:Connect(function()
-        dragging = true
-    end)
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
-    end)
-    RunService.RenderStepped:Connect(function()
-        if dragging then
-            local mouse = UserInputService:GetMouseLocation()
-            local posX = math.clamp(mouse.X - slider.AbsolutePosition.X,0,slider.AbsoluteSize.X)
-            local value = min + (posX / slider.AbsoluteSize.X) * (max-min)
-            callback(value)
-            label.Text = labelText..": "..math.floor(value)
-        end
-    end)
 end
 
 -- Botões
@@ -101,7 +56,7 @@ local tpBtn = createButton("TP", Color3.fromRGB(0,150,255), mainFrame)
 
 -- Frame da lista de TP
 local tpFrame = Instance.new("ScrollingFrame")
-tpFrame.Size = UDim2.new(0,260,0,200)
+tpFrame.Size = UDim2.new(0,240,0,200)
 tpFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 tpFrame.BorderSizePixel = 0
 tpFrame.Visible = false
@@ -165,10 +120,6 @@ tpBtn.MouseButton1Click:Connect(function()
     if tpFrame.Visible then updateTPList() end
 end)
 
--- Sliders
-createSlider("FlySpeed", 10, 200, flySpeed, mainFrame, function(val) flySpeed = val end)
-createSlider("WalkSpeed", 8, 100, walkSpeed, mainFrame, function(val) walkSpeed = val end)
-
 -- Noclip
 RunService.Stepped:Connect(function()
     local char = player.Character
@@ -205,9 +156,12 @@ end)
 
 -- Speed
 RunService.RenderStepped:Connect(function()
-    if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+    if speedEnabled and player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
         local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
-        humanoid.WalkSpeed = speedEnabled and walkSpeed or 16
+        humanoid.WalkSpeed = walkSpeed * 2 -- exemplo: 2x mais rápido
+    elseif player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+        humanoid.WalkSpeed = walkSpeed
     end
 end)
 
