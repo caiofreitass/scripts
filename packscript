@@ -1,4 +1,3 @@
-loadstring([[
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -262,4 +261,3 @@ end
 
 player.CharacterAdded:Connect(setupTwentyJump)
 if player.Character then setupTwentyJump(player.Character) end
-]])()
