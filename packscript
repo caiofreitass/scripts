@@ -1,11 +1,11 @@
+loadstring([[
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
--- Espera o PlayerGui carregar
-local playerGui = player:WaitForChild("PlayerGui")
-local oldGui = playerGui:FindFirstChild("ModernGUI")
+-- Limpa GUI antiga se existir
+local oldGui = player:FindFirstChild("PlayerGui"):FindFirstChild("ModernGUI")
 if oldGui then oldGui:Destroy() end
 
 -- Estados globais
@@ -15,7 +15,6 @@ local speedEnabled = false
 local jumpEnabled = false -- Twentyjump
 local flySpeed = 50
 local walkSpeed = 16
-local guiVisible = false -- janela de configurações
 
 -- Twentyjump configurações
 local MAX_JUMPS = 100
@@ -24,26 +23,16 @@ local COOLDOWN = 0.15
 local jumps = 0
 local lastJumpTime = 0
 
--- Cria ScreenGui
+-- Cria GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ModernGUI"
-screenGui.Parent = playerGui
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- Botão de configurações (ícone)
-local configBtn = Instance.new("ImageButton")
-configBtn.Size = UDim2.new(0,50,0,50)
-configBtn.Position = UDim2.new(0,10,0,10)
-configBtn.Image = "rbxassetid://3926305904" -- ícone de engrenagem padrão do Roblox
-configBtn.BackgroundTransparency = 1
-configBtn.Parent = screenGui
-
--- Frame principal (GUI dos botões) oculto inicialmente
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0,300,0,500)
-mainFrame.Position = UDim2.new(0,10,0,70)
+mainFrame.Position = UDim2.new(0,10,0,50)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 mainFrame.BorderSizePixel = 0
-mainFrame.Visible = guiVisible
 mainFrame.Parent = screenGui
 
 local layout = Instance.new("UIListLayout")
@@ -121,10 +110,10 @@ local jumpBtn = createButton("Twentyjump OFF", Color3.fromRGB(200,0,200), mainFr
 -- Lista de TP à direita
 local tpFrame = Instance.new("ScrollingFrame")
 tpFrame.Size = UDim2.new(0,200,0,400)
-tpFrame.Position = UDim2.new(1,-210,0,70)
+tpFrame.Position = UDim2.new(1,-210,0,50)
 tpFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 tpFrame.BorderSizePixel = 0
-tpFrame.Visible = false
+tpFrame.Visible = true
 tpFrame.Parent = screenGui
 
 local tpLayout = Instance.new("UIListLayout")
@@ -133,7 +122,6 @@ tpLayout.FillDirection = Enum.FillDirection.Vertical
 tpLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 tpLayout.Parent = tpFrame
 
--- Atualiza lista de jogadores para TP
 local function updateTPList()
     for _,child in pairs(tpFrame:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
@@ -159,37 +147,25 @@ end
 Players.PlayerAdded:Connect(updateTPList)
 Players.PlayerRemoving:Connect(updateTPList)
 updateTPList()
+tpBtn.MouseButton1Click:Connect(function() tpFrame.Visible = not tpFrame.Visible end)
 
--- Clique no ícone de configurações para mostrar/ocultar GUI
-configBtn.MouseButton1Click:Connect(function()
-    guiVisible = not guiVisible
-    mainFrame.Visible = guiVisible
-end)
+-- Configuração do personagem
+local function setupCharacter(char)
+    noclipEnabled = false
+    flyEnabled = false
+    speedEnabled = false
+    jumpEnabled = false
 
--- Botões de funcionalidades
-noclipBtn.MouseButton1Click:Connect(function()
-    noclipEnabled = not noclipEnabled
-    noclipBtn.Text = noclipEnabled and "Noclip ON" or "Noclip OFF"
-end)
+    noclipBtn.Text = "Noclip OFF"
+    flyBtn.Text = "Fly OFF"
+    speedBtn.Text = "Speed OFF"
+    jumpBtn.Text = "Twentyjump OFF"
+    flySlider.Visible = false
+    speedSlider.Visible = false
+end
 
-flyBtn.MouseButton1Click:Connect(function()
-    flyEnabled = not flyEnabled
-    flyBtn.Text = flyEnabled and "Fly ON" or "Fly OFF"
-    flySlider.Visible = flyEnabled
-    if flyEnabled then speedSlider.Visible = false end
-end)
-
-speedBtn.MouseButton1Click:Connect(function()
-    speedEnabled = not speedEnabled
-    speedBtn.Text = speedEnabled and "Speed ON" or "Speed OFF"
-    speedSlider.Visible = speedEnabled
-    if speedEnabled then flySlider.Visible = false end
-end)
-
-jumpBtn.MouseButton1Click:Connect(function()
-    jumpEnabled = not jumpEnabled
-    jumpBtn.Text = jumpEnabled and "Twentyjump ON" or "Twentyjump OFF"
-end)
+player.CharacterAdded:Connect(setupCharacter)
+if player.Character then setupCharacter(player.Character) end
 
 -- Eventos globais aplicando efeitos
 RunService:BindToRenderStep("FlySpeedNoclip", Enum.RenderPriority.Character.Value, function()
@@ -225,7 +201,32 @@ RunService:BindToRenderStep("FlySpeedNoclip", Enum.RenderPriority.Character.Valu
     end
 end)
 
--- Twentyjump
+-- Botões
+noclipBtn.MouseButton1Click:Connect(function()
+    noclipEnabled = not noclipEnabled
+    noclipBtn.Text = noclipEnabled and "Noclip ON" or "Noclip OFF"
+end)
+
+flyBtn.MouseButton1Click:Connect(function()
+    flyEnabled = not flyEnabled
+    flyBtn.Text = flyEnabled and "Fly ON" or "Fly OFF"
+    flySlider.Visible = flyEnabled
+    if flyEnabled then speedSlider.Visible = false end
+end)
+
+speedBtn.MouseButton1Click:Connect(function()
+    speedEnabled = not speedEnabled
+    speedBtn.Text = speedEnabled and "Speed ON" or "Speed OFF"
+    speedSlider.Visible = speedEnabled
+    if speedEnabled then flySlider.Visible = false end
+end)
+
+jumpBtn.MouseButton1Click:Connect(function()
+    jumpEnabled = not jumpEnabled
+    jumpBtn.Text = jumpEnabled and "Twentyjump ON" or "Twentyjump OFF"
+end)
+
+-- Twentyjump implementação
 local function setupTwentyJump(character)
     local humanoid = character:WaitForChild("Humanoid",5)
     local hrp = character:WaitForChild("HumanoidRootPart",5)
@@ -261,3 +262,4 @@ end
 
 player.CharacterAdded:Connect(setupTwentyJump)
 if player.Character then setupTwentyJump(player.Character) end
+]])()
