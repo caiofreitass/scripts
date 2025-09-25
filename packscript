@@ -1,3 +1,4 @@
+loadstring([[
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -11,8 +12,16 @@ if oldGui then oldGui:Destroy() end
 local noclipEnabled = false
 local flyEnabled = false
 local speedEnabled = false
+local jumpEnabled = false -- Twentyjump
 local flySpeed = 50
 local walkSpeed = 16
+
+-- Twentyjump configurações
+local MAX_JUMPS = 100
+local EXTRA_JUMP_POWER = 50
+local COOLDOWN = 0.15
+local jumps = 0
+local lastJumpTime = 0
 
 -- Cria GUI
 local screenGui = Instance.new("ScreenGui")
@@ -96,6 +105,7 @@ local flyBtn = createButton("Fly OFF", Color3.fromRGB(0,0,255), mainFrame)
 local flySlider = createSlider("FlySpeed", 10, 200, flySpeed, mainFrame, function(val) flySpeed = val end)
 local speedBtn = createButton("Speed OFF", Color3.fromRGB(255,140,0), mainFrame)
 local speedSlider = createSlider("WalkSpeed", 8, 100, walkSpeed, mainFrame, function(val) walkSpeed = val end)
+local jumpBtn = createButton("Twentyjump OFF", Color3.fromRGB(200,0,200), mainFrame)
 
 -- Lista de TP à direita
 local tpFrame = Instance.new("ScrollingFrame")
@@ -144,10 +154,12 @@ local function setupCharacter(char)
     noclipEnabled = false
     flyEnabled = false
     speedEnabled = false
+    jumpEnabled = false
 
     noclipBtn.Text = "Noclip OFF"
     flyBtn.Text = "Fly OFF"
     speedBtn.Text = "Speed OFF"
+    jumpBtn.Text = "Twentyjump OFF"
     flySlider.Visible = false
     speedSlider.Visible = false
 end
@@ -156,11 +168,12 @@ player.CharacterAdded:Connect(setupCharacter)
 if player.Character then setupCharacter(player.Character) end
 
 -- Eventos globais aplicando efeitos
-RunService:BindToRenderStep("FlyAndSpeed", Enum.RenderPriority.Character.Value, function()
+RunService:BindToRenderStep("FlySpeedNoclip", Enum.RenderPriority.Character.Value, function()
     local char = player.Character
     if char then
         local hrp = char:FindFirstChild("HumanoidRootPart")
         local humanoid = char:FindFirstChildOfClass("Humanoid")
+
         -- Fly
         if hrp and flyEnabled then
             local move = Vector3.new()
@@ -173,10 +186,12 @@ RunService:BindToRenderStep("FlyAndSpeed", Enum.RenderPriority.Character.Value, 
             if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move = move - Vector3.new(0,1,0) end
             if move.Magnitude>0 then hrp.Velocity = move.Unit*flySpeed hrp.Anchored=false end
         end
+
         -- Speed
         if humanoid then
             humanoid.WalkSpeed = speedEnabled and walkSpeed or 16
         end
+
         -- Noclip
         for _,part in pairs(char:GetChildren()) do
             if part:IsA("BasePart") then
@@ -205,3 +220,46 @@ speedBtn.MouseButton1Click:Connect(function()
     speedSlider.Visible = speedEnabled
     if speedEnabled then flySlider.Visible = false end
 end)
+
+jumpBtn.MouseButton1Click:Connect(function()
+    jumpEnabled = not jumpEnabled
+    jumpBtn.Text = jumpEnabled and "Twentyjump ON" or "Twentyjump OFF"
+end)
+
+-- Twentyjump implementação
+local function setupTwentyJump(character)
+    local humanoid = character:WaitForChild("Humanoid",5)
+    local hrp = character:WaitForChild("HumanoidRootPart",5)
+    if not humanoid or not hrp then return end
+
+    jumps = 0
+    lastJumpTime = 0
+
+    humanoid:GetPropertyChangedSignal("FloorMaterial"):Connect(function()
+        if humanoid.FloorMaterial ~= Enum.Material.Air then
+            jumps = 0
+        end
+    end)
+
+    UserInputService.JumpRequest:Connect(function()
+        if not jumpEnabled then return end
+        local now = tick()
+        if now - lastJumpTime < COOLDOWN then return end
+        lastJumpTime = now
+
+        if jumps < MAX_JUMPS then
+            jumps = jumps + 1
+            if jumps == 1 then
+                humanoid.Jump = true
+            else
+                local vel = hrp.Velocity
+                hrp.Velocity = Vector3.new(vel.X, EXTRA_JUMP_POWER, vel.Z)
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
+    end)
+end
+
+player.CharacterAdded:Connect(setupTwentyJump)
+if player.Character then setupTwentyJump(player.Character) end
+]])()
