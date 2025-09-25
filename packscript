@@ -3,8 +3,9 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
--- Limpa GUI antiga se existir
-local oldGui = player:FindFirstChild("PlayerGui"):FindFirstChild("ModernGUI")
+-- Espera o PlayerGui carregar
+local playerGui = player:WaitForChild("PlayerGui")
+local oldGui = playerGui:FindFirstChild("ModernGUI")
 if oldGui then oldGui:Destroy() end
 
 -- Estados globais
@@ -25,7 +26,7 @@ local lastJumpTime = 0
 -- Cria GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ModernGUI"
-screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.Parent = playerGui
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0,300,0,500)
