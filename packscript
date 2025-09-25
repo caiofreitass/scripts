@@ -10,15 +10,8 @@ local noclipEnabled = false
 local flyEnabled = false
 local infiniteHealthEnabled = false
 local speedEnabled = false
-local multiJumpEnabled = false
 local flySpeed = 50
 local walkSpeed = 16
-local maxJumps = 2
-
--- Contador de pulos
-local jumps = 0
-local lastJumpTime = 0
-local COOLDOWN = 0.1
 
 -- GUI principal
 local screenGui = Instance.new("ScreenGui")
@@ -26,7 +19,7 @@ screenGui.Name = "ModernGUI"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0,260,0,500)
+mainFrame.Size = UDim2.new(0,260,0,450)
 mainFrame.Position = UDim2.new(0,10,0,50)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 mainFrame.BorderSizePixel = 0
@@ -102,12 +95,10 @@ local flyBtn = createButton("Fly OFF", Color3.fromRGB(0,0,255), mainFrame)
 local speedBtn = createButton("Speed OFF", Color3.fromRGB(255,140,0), mainFrame)
 local healthBtn = createButton("Vida OFF", Color3.fromRGB(0,255,0), mainFrame)
 local tpBtn = createButton("TP", Color3.fromRGB(0,150,255), mainFrame)
-local jumpBtn = createButton("MultiJump OFF", Color3.fromRGB(255,0,255), mainFrame)
 
--- Sliders
+-- Sliders escondidos dentro dos botões
 local flySlider = createSlider("FlySpeed", 10, 200, flySpeed, mainFrame, function(val) flySpeed = val end)
 local speedSlider = createSlider("WalkSpeed", 8, 100, walkSpeed, mainFrame, function(val) walkSpeed = val end)
-local jumpSlider = createSlider("MaxJumps", 1, 20, maxJumps, mainFrame, function(val) maxJumps = math.floor(val) end)
 
 -- Toggle Noclip
 noclipBtn.MouseButton1Click:Connect(function()
@@ -127,13 +118,6 @@ speedBtn.MouseButton1Click:Connect(function()
     speedEnabled = not speedEnabled
     speedBtn.Text = speedEnabled and "Speed ON" or "Speed OFF"
     speedSlider.Visible = speedEnabled
-end)
-
--- Toggle MultiJump e slider
-jumpBtn.MouseButton1Click:Connect(function()
-    multiJumpEnabled = not multiJumpEnabled
-    jumpBtn.Text = multiJumpEnabled and "MultiJump ON" or "MultiJump OFF"
-    jumpSlider.Visible = multiJumpEnabled
 end)
 
 -- Toggle Vida
@@ -214,46 +198,6 @@ RunService.RenderStepped:Connect(function()
         local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
         humanoid.WalkSpeed = speedEnabled and walkSpeed or 16
     end
-end)
-
--- MultiJump
-local char = player.Character
-if char then
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        humanoid.Jumping:Connect(function(active)
-            if multiJumpEnabled then
-                local now = tick()
-                if now - lastJumpTime < COOLDOWN then return end
-                lastJumpTime = now
-                if jumps < maxJumps then
-                    jumps = jumps + 1
-                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                end
-            end
-        end)
-    end
-end
-
-player.CharacterAdded:Connect(function(char)
-    local humanoid = char:WaitForChild("Humanoid")
-    jumps = 0
-    humanoid.StateChanged:Connect(function(_, newState)
-        if newState == Enum.HumanoidStateType.Landed then
-            jumps = 0
-        end
-    end)
-    humanoid.Jumping:Connect(function(active)
-        if multiJumpEnabled then
-            local now = tick()
-            if now - lastJumpTime < COOLDOWN then return end
-            lastJumpTime = now
-            if jumps < maxJumps then
-                jumps = jumps + 1
-                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            end
-        end
-    end)
 end)
 
 -- Vida infinita
