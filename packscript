@@ -1,5 +1,3 @@
-loadstring([[
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -260,5 +258,3 @@ RunService.Stepped:Connect(function()
         humanoid.Health = humanoid.MaxHealth
     end
 end)
-
-]])()
