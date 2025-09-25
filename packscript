@@ -19,7 +19,7 @@ local walkSpeed = 16
 -- Twentyjump configurações
 local MAX_JUMPS = 100
 local EXTRA_JUMP_POWER = 50
-local COOLDOWN = 0.15
+local COOLDOWN = 0
 local jumps = 0
 local lastJumpTime = 0
 
