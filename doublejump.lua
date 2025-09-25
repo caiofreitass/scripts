@@ -1,4 +1,4 @@
--- Script completo: Twentyjump + Noclip + Fly + Vida infinita + GUI de controle
+-- Script completo: Twentyjump + Noclip + Fly + Sem dano de queda + Vida infinita GUI
 
 local Players = game:GetService("Players")
 local UserInput = game:GetService("UserInputService")
@@ -17,7 +17,6 @@ local lastJumpTime = 0
 local noclipEnabled = false
 local flyEnabled = false
 local infiniteHealthEnabled = false
-local jumpEnabled = true
 
 -- GUI
 local screenGui = Instance.new("ScreenGui")
@@ -38,7 +37,6 @@ end
 local noclipButton = createButton("Noclip OFF", UDim2.new(0,10,0,10), Color3.fromRGB(255,0,0))
 local flyButton = createButton("Fly OFF", UDim2.new(0,10,0,60), Color3.fromRGB(0,0,255))
 local healthButton = createButton("Vida OFF", UDim2.new(0,10,0,110), Color3.fromRGB(0,255,0))
-local jumpButton = createButton("Jump OFF", UDim2.new(0,10,0,160), Color3.fromRGB(255,165,0))
 
 -- Alternar noclip
 noclipButton.MouseButton1Click:Connect(function()
@@ -56,12 +54,6 @@ end)
 healthButton.MouseButton1Click:Connect(function()
     infiniteHealthEnabled = not infiniteHealthEnabled
     healthButton.Text = infiniteHealthEnabled and "Vida ON" or "Vida OFF"
-end)
-
--- Alternar twentyjump
-jumpButton.MouseButton1Click:Connect(function()
-    jumpEnabled = not jumpEnabled
-    jumpButton.Text = jumpEnabled and "Jump ON" or "Jump OFF"
 end)
 
 -- Noclip
@@ -123,11 +115,9 @@ local function onCharacterAdded(character)
         end
     end)
 
-    -- Captura do pulo
+    -- Twentyjump
     UserInput.JumpRequest:Connect(function()
         if not humanoid or not hrp then return end
-        if not jumpEnabled then return end -- bloqueia pulo se desativado
-
         local now = tick()
         if now - lastJumpTime < COOLDOWN then return end
         lastJumpTime = now
