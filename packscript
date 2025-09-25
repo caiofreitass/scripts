@@ -1,40 +1,39 @@
-loadstring([[
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
--- Estados
+-- Variáveis de estado
 local noclipEnabled = false
 local flyEnabled = false
-local infiniteHealthEnabled = false
 local speedEnabled = false
 local flySpeed = 50
 local walkSpeed = 16
 
--- GUI principal
+-- Cria GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ModernGUI"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
+-- Frame principal
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0,260,0,450)
+mainFrame.Size = UDim2.new(0,300,0,500)
 mainFrame.Position = UDim2.new(0,10,0,50)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 
+-- Layout
 local layout = Instance.new("UIListLayout")
 layout.Padding = UDim.new(0,5)
 layout.FillDirection = Enum.FillDirection.Vertical
 layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 layout.Parent = mainFrame
 
--- Função para criar botão
+-- Função para criar botão simples
 local function createButton(text, color, parent)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0,240,0,35)
+    btn.Size = UDim2.new(0,260,0,35)
     btn.Text = text
     btn.BackgroundColor3 = color
     btn.TextColor3 = Color3.new(1,1,1)
@@ -45,10 +44,10 @@ local function createButton(text, color, parent)
     return btn
 end
 
--- Função para criar slider
+-- Função para criar slider (frame separado)
 local function createSlider(labelText, min, max, default, parent, callback)
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0,240,0,50)
+    frame.Size = UDim2.new(0,260,0,50)
     frame.BackgroundColor3 = Color3.fromRGB(50,50,50)
     frame.BorderSizePixel = 0
     frame.Visible = false
@@ -57,8 +56,8 @@ local function createSlider(labelText, min, max, default, parent, callback)
     local label = Instance.new("TextLabel")
     label.Text = labelText..": "..default
     label.Size = UDim2.new(1,0,0,20)
-    label.TextColor3 = Color3.new(1,1,1)
     label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.new(1,1,1)
     label.Font = Enum.Font.SourceSansBold
     label.TextScaled = true
     label.Parent = frame
@@ -67,8 +66,8 @@ local function createSlider(labelText, min, max, default, parent, callback)
     slider.Size = UDim2.new(1,0,0,20)
     slider.Position = UDim2.new(0,0,0,25)
     slider.BackgroundColor3 = Color3.fromRGB(100,100,100)
-    slider.Text = ""
     slider.BorderSizePixel = 0
+    slider.Text = ""
     slider.Parent = frame
 
     local dragging = false
@@ -76,6 +75,7 @@ local function createSlider(labelText, min, max, default, parent, callback)
     UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
     end)
+
     RunService.RenderStepped:Connect(function()
         if dragging then
             local mouse = UserInputService:GetMouseLocation()
@@ -89,50 +89,39 @@ local function createSlider(labelText, min, max, default, parent, callback)
     return frame
 end
 
--- Botões principais
+-- Botões simples
 local noclipBtn = createButton("Noclip OFF", Color3.fromRGB(255,0,0), mainFrame)
-local flyBtn = createButton("Fly OFF", Color3.fromRGB(0,0,255), mainFrame)
-local speedBtn = createButton("Speed OFF", Color3.fromRGB(255,140,0), mainFrame)
-local healthBtn = createButton("Vida OFF", Color3.fromRGB(0,255,0), mainFrame)
 local tpBtn = createButton("TP", Color3.fromRGB(0,150,255), mainFrame)
 
--- Sliders escondidos dentro dos botões
+-- Botões Fly e Speed com sliders separados
+local flyBtn = createButton("Fly OFF", Color3.fromRGB(0,0,255), mainFrame)
 local flySlider = createSlider("FlySpeed", 10, 200, flySpeed, mainFrame, function(val) flySpeed = val end)
+
+local speedBtn = createButton("Speed OFF", Color3.fromRGB(255,140,0), mainFrame)
 local speedSlider = createSlider("WalkSpeed", 8, 100, walkSpeed, mainFrame, function(val) walkSpeed = val end)
 
--- Toggle Noclip
-noclipBtn.MouseButton1Click:Connect(function()
-    noclipEnabled = not noclipEnabled
-    noclipBtn.Text = noclipEnabled and "Noclip ON" or "Noclip OFF"
-end)
-
--- Toggle Fly e slider
+-- Alterna Fly
 flyBtn.MouseButton1Click:Connect(function()
     flyEnabled = not flyEnabled
     flyBtn.Text = flyEnabled and "Fly ON" or "Fly OFF"
     flySlider.Visible = flyEnabled
 end)
 
--- Toggle Speed e slider
+-- Alterna Speed
 speedBtn.MouseButton1Click:Connect(function()
     speedEnabled = not speedEnabled
     speedBtn.Text = speedEnabled and "Speed ON" or "Speed OFF"
     speedSlider.Visible = speedEnabled
 end)
 
--- Toggle Vida
-healthBtn.MouseButton1Click:Connect(function()
-    infiniteHealthEnabled = not infiniteHealthEnabled
-    healthBtn.Text = infiniteHealthEnabled and "Vida ON" or "Vida OFF"
-end)
-
--- Toggle TP (lista permanece)
+-- Frame da lista de TP (à direita da tela)
 local tpFrame = Instance.new("ScrollingFrame")
-tpFrame.Size = UDim2.new(0,240,0,200)
+tpFrame.Size = UDim2.new(0,200,0,400)
+tpFrame.Position = UDim2.new(1,-210,0,50)
 tpFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 tpFrame.BorderSizePixel = 0
-tpFrame.Visible = false
-tpFrame.Parent = mainFrame
+tpFrame.Visible = true
+tpFrame.Parent = screenGui
 
 local tpLayout = Instance.new("UIListLayout")
 tpLayout.Padding = UDim.new(0,3)
@@ -142,25 +131,55 @@ tpLayout.Parent = tpFrame
 
 local function updateTPList()
     for _,child in pairs(tpFrame:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
-    end
-    for _,pl in pairs(Players:GetPlayers()) do
-        if pl ~= player then
-            local btn = createButton(pl.Name, Color3.fromRGB(0,200,0), tpFrame)
-            btn.Size = UDim2.new(1,0,0,30)
-            btn.MouseButton1Click:Connect(function()
-                if pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    player.Character.HumanoidRootPart.CFrame = pl.Character.HumanoidRootPart.CFrame + Vector3.new(0,3,0)
-                end
-            end)
+        if child:IsA("TextButton") then
+            child:Destroy()
         end
     end
-    tpFrame.CanvasSize = UDim2.new(0,0,0,#Players:GetPlayers()*35)
+
+    -- Cria uma tabela com todos os jogadores (exceto você)
+    local playersList = {}
+    for _,pl in pairs(Players:GetPlayers()) do
+        if pl ~= player then
+            table.insert(playersList, pl)
+        end
+    end
+
+    -- Ordena alfabeticamente pelo nome
+    table.sort(playersList, function(a,b)
+        return a.Name:lower() < b.Name:lower()
+    end)
+
+    -- Cria os botões na ordem correta
+    for _,pl in ipairs(playersList) do
+        local btn = createButton(pl.Name, Color3.fromRGB(0,200,0), tpFrame)
+        btn.Size = UDim2.new(1,0,0,30)
+        btn.TextScaled = true
+        btn.MouseButton1Click:Connect(function()
+            if pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.CFrame = pl.Character.HumanoidRootPart.CFrame + Vector3.new(0,3,0)
+            end
+        end)
+    end
+
+    tpFrame.CanvasSize = UDim2.new(0,0,0,#playersList*35)
 end
 
+-- Atualiza automaticamente quando jogadores entram ou saem
+Players.PlayerAdded:Connect(updateTPList)
+Players.PlayerRemoving:Connect(updateTPList)
+
+-- Atualiza no início
+updateTPList()
+
+-- Botão TP apenas para mostrar/ocultar
 tpBtn.MouseButton1Click:Connect(function()
     tpFrame.Visible = not tpFrame.Visible
-    if tpFrame.Visible then updateTPList() end
+end)
+
+-- Noclip
+noclipBtn.MouseButton1Click:Connect(function()
+    noclipEnabled = not noclipEnabled
+    noclipBtn.Text = noclipEnabled and "Noclip ON" or "Noclip OFF"
 end)
 
 -- Noclip
@@ -188,24 +207,17 @@ RunService.RenderStepped:Connect(function()
         if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + camCF.RightVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0,1,0) end
         if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move = move - Vector3.new(0,1,0) end
-        if move.Magnitude > 0 then hrp.Velocity = move.Unit * flySpeed; hrp.Anchored = false end
+        if move.Magnitude > 0 then
+            hrp.Velocity = move.Unit * flySpeed
+            hrp.Anchored = false
+        end
     end
 end)
 
 -- Speed
 RunService.RenderStepped:Connect(function()
-    if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
-        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+    local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
         humanoid.WalkSpeed = speedEnabled and walkSpeed or 16
     end
 end)
-
--- Vida infinita
-RunService.Stepped:Connect(function()
-    if infiniteHealthEnabled and player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
-        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
-        humanoid.Health = humanoid.MaxHealth
-    end
-end)
-
-]])()
