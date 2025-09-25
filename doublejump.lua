@@ -1,4 +1,4 @@
--- twentyjump + GUI com Noclip e Voo
+-- twentyjump + Noclip + Fly + Sem dano de queda
 local Players = game:GetService("Players")
 local UserInput = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -35,19 +35,19 @@ end
 local noclipButton = createButton("Noclip OFF", UDim2.new(0,10,0,10), Color3.fromRGB(255,0,0))
 local flyButton = createButton("Fly OFF", UDim2.new(0,10,0,60), Color3.fromRGB(0,0,255))
 
--- Função para ativar/desativar noclip
+-- Alternar noclip
 noclipButton.MouseButton1Click:Connect(function()
     noclipEnabled = not noclipEnabled
     noclipButton.Text = noclipEnabled and "Noclip ON" or "Noclip OFF"
 end)
 
--- Função para ativar/desativar voo
+-- Alternar voo
 flyButton.MouseButton1Click:Connect(function()
     flyEnabled = not flyEnabled
     flyButton.Text = flyEnabled and "Fly ON" or "Fly OFF"
 end)
 
--- Função de Noclip (mantém o CanCollide falso enquanto ativado)
+-- Noclip
 RunService.Stepped:Connect(function()
     local character = player.Character
     if character then
@@ -59,7 +59,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Função de voo
+-- Voo
 RunService.RenderStepped:Connect(function(delta)
     if flyEnabled and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         local hrp = player.Character.HumanoidRootPart
@@ -73,12 +73,14 @@ RunService.RenderStepped:Connect(function(delta)
         if UserInput:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0,1,0) end
         if UserInput:IsKeyDown(Enum.KeyCode.LeftShift) then move = move - Vector3.new(0,1,0) end
 
-        hrp.Velocity = move.Unit * flySpeed
-        hrp.Anchored = false
+        if move.Magnitude > 0 then
+            hrp.Velocity = move.Unit * flySpeed
+            hrp.Anchored = false
+        end
     end
 end)
 
--- twentyjump
+-- Twentyjump + Sem dano de queda
 local function onCharacterAdded(character)
     local humanoid = character:WaitForChild("Humanoid", 5)
     local hrp = character:WaitForChild("HumanoidRootPart", 5)
@@ -88,8 +90,14 @@ local function onCharacterAdded(character)
     lastJumpTime = 0
 
     humanoid.StateChanged:Connect(function(_, new)
+        -- Resetar pulos
         if new == Enum.HumanoidStateType.Landed or new == Enum.HumanoidStateType.Running then
             jumps = 0
+        end
+
+        -- Remover dano de queda
+        if new == Enum.HumanoidStateType.Landed then
+            humanoid.Health = humanoid.Health
         end
     end)
 
