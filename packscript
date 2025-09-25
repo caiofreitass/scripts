@@ -22,7 +22,7 @@ local toggleBtn = Instance.new("ImageButton")
 toggleBtn.Size = UDim2.new(0,60,0,60)
 toggleBtn.Position = UDim2.new(0,10,0,10)
 toggleBtn.BackgroundTransparency = 1
-toggleBtn.Image = "rbxassetid://6031097227" -- ícone de hack (mude se quiser)
+toggleBtn.Image = "rbxassetid://6031097227" -- ícone
 toggleBtn.Parent = screenGui
 
 -- Frame principal (menu)
@@ -121,7 +121,9 @@ espBtn.MouseButton1Click:Connect(function()
     espBtn.Text = espEnabled and "ESP ON" or "ESP OFF"
     if not espEnabled then
         for _,v in pairs(screenGui:GetChildren()) do
-            if v.Name == "ESP_NAME" then v:Destroy() end
+            if string.find(v.Name, "_ESP") then
+                v:Destroy()
+            end
         end
     end
 end)
@@ -141,7 +143,7 @@ RunService.RenderStepped:Connect(function()
                     tag.Text = pl.Name
                     tag.Size = UDim2.new(0,200,0,20)
                     tag.BackgroundTransparency = 1
-                    tag.TextColor3 = Color3.fromRGB(255,0,0)
+                    tag.TextColor3 = Color3.fromRGB(255,0,0) -- vermelho
                     tag.Font = Enum.Font.SourceSansBold
                     tag.TextScaled = true
                     tag.Parent = screenGui
