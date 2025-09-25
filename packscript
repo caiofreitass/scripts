@@ -115,146 +115,45 @@ local tpBtn = createButton("TP", Color3.fromRGB(0,150,255), mainFrame)
 local flySlider = createSlider("FlySpeed", 10, 200, flySpeed, mainFrame, function(val) flySpeed = val end)
 local speedSlider = createSlider("WalkSpeed", 8, 100, walkSpeed, mainFrame, function(val) walkSpeed = val end)
 
--- Toggle Noclip
-noclipBtn.MouseButton1Click:Connect(function()
-    noclipEnabled = not noclipEnabled
-    noclipBtn.Text = noclipEnabled and "Noclip ON" or "Noclip OFF"
-end)
-
--- Toggle Fly
-flyBtn.MouseButton1Click:Connect(function()
-    flyEnabled = not flyEnabled
-    flyBtn.Text = flyEnabled and "Fly ON" or "Fly OFF"
-    flySlider.Visible = flyEnabled
-end)
-
--- Toggle Speed
-speedBtn.MouseButton1Click:Connect(function()
-    speedEnabled = not speedEnabled
-    speedBtn.Text = speedEnabled and "Speed ON" or "Speed OFF"
-    speedSlider.Visible = speedEnabled
-end)
-
--- Toggle Vida
-healthBtn.MouseButton1Click:Connect(function()
-    infiniteHealthEnabled = not infiniteHealthEnabled
-    healthBtn.Text = infiniteHealthEnabled and "Vida ON" or "Vida OFF"
-end)
-
 -- Toggle ESP
 espBtn.MouseButton1Click:Connect(function()
     espEnabled = not espEnabled
     espBtn.Text = espEnabled and "ESP ON" or "ESP OFF"
     if not espEnabled then
-        for _,pl in pairs(Players:GetPlayers()) do
-            if pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") then
-                if pl.Character:FindFirstChild("ESP") then
-                    pl.Character.ESP:Destroy()
-                end
-            end
+        for _,v in pairs(screenGui:GetChildren()) do
+            if v.Name == "ESP_NAME" then v:Destroy() end
         end
     end
 end)
 
--- Função ESP
+-- Atualizar ESP
 RunService.RenderStepped:Connect(function()
     if espEnabled then
         for _,pl in pairs(Players:GetPlayers()) do
-            if pl ~= player and pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") then
-                if not pl.Character:FindFirstChild("ESP") then
-                    local box = Instance.new("BoxHandleAdornment")
-                    box.Name = "ESP"
-                    box.Adornee = pl.Character.HumanoidRootPart
-                    box.Size = Vector3.new(4,6,2)
-                    box.Color3 = Color3.fromRGB(255,0,0)
-                    box.Transparency = 0.5
-                    box.ZIndex = 0
-                    box.AlwaysOnTop = true
-                    box.Parent = pl.Character
+            if pl ~= player and pl.Character and pl.Character:FindFirstChild("Head") then
+                local head = pl.Character.Head
+                local pos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(head.Position + Vector3.new(0,2,0))
+
+                local tag = screenGui:FindFirstChild(pl.Name.."_ESP")
+                if not tag then
+                    tag = Instance.new("TextLabel")
+                    tag.Name = pl.Name.."_ESP"
+                    tag.Text = pl.Name
+                    tag.Size = UDim2.new(0,200,0,20)
+                    tag.BackgroundTransparency = 1
+                    tag.TextColor3 = Color3.fromRGB(255,0,0)
+                    tag.Font = Enum.Font.SourceSansBold
+                    tag.TextScaled = true
+                    tag.Parent = screenGui
+                end
+
+                if onScreen then
+                    tag.Visible = true
+                    tag.Position = UDim2.new(0,pos.X-100,0,pos.Y-10)
+                else
+                    tag.Visible = false
                 end
             end
         end
-    end
-end)
-
--- TP
-local tpFrame = Instance.new("ScrollingFrame")
-tpFrame.Size = UDim2.new(0,240,0,200)
-tpFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
-tpFrame.BorderSizePixel = 0
-tpFrame.Visible = false
-tpFrame.Parent = mainFrame
-
-local tpLayout = Instance.new("UIListLayout")
-tpLayout.Padding = UDim.new(0,3)
-tpLayout.FillDirection = Enum.FillDirection.Vertical
-tpLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-tpLayout.Parent = tpFrame
-
-local function updateTPList()
-    for _,child in pairs(tpFrame:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
-    end
-    for _,pl in pairs(Players:GetPlayers()) do
-        if pl ~= player then
-            local btn = createButton(pl.Name, Color3.fromRGB(0,200,0), tpFrame)
-            btn.Size = UDim2.new(1,0,0,30)
-            btn.MouseButton1Click:Connect(function()
-                if pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    player.Character.HumanoidRootPart.CFrame = pl.Character.HumanoidRootPart.CFrame + Vector3.new(0,3,0)
-                end
-            end)
-        end
-    end
-    tpFrame.CanvasSize = UDim2.new(0,0,0,#Players:GetPlayers()*35)
-end
-
-tpBtn.MouseButton1Click:Connect(function()
-    tpFrame.Visible = not tpFrame.Visible
-    if tpFrame.Visible then updateTPList() end
-end)
-
--- Noclip
-RunService.Stepped:Connect(function()
-    local char = player.Character
-    if char then
-        for _,part in pairs(char:GetChildren()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = not noclipEnabled
-            end
-        end
-    end
-end)
-
--- Fly
-RunService.RenderStepped:Connect(function()
-    local char = player.Character
-    if flyEnabled and char and char:FindFirstChild("HumanoidRootPart") then
-        local hrp = char.HumanoidRootPart
-        local move = Vector3.new()
-        local camCF = workspace.CurrentCamera.CFrame
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + camCF.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - camCF.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - camCF.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + camCF.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0,1,0) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move = move - Vector3.new(0,1,0) end
-        if move.Magnitude > 0 then hrp.Velocity = move.Unit * flySpeed; hrp.Anchored = false end
-    end
-end)
-
--- Speed
-RunService.RenderStepped:Connect(function()
-    if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
-        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
-        humanoid.WalkSpeed = speedEnabled and walkSpeed or 16
-    end
-end)
-
--- Vida infinita
-RunService.Stepped:Connect(function()
-    if infiniteHealthEnabled and player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
-        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
-        humanoid.Health = humanoid.MaxHealth
     end
 end)
