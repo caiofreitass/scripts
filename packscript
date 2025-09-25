@@ -13,11 +13,9 @@ local noclipEnabled = false
 local flyEnabled = false
 local speedEnabled = false
 local jumpEnabled = false -- Twentyjump
-local espEnabled = false
 local flySpeed = 50
 local walkSpeed = 16
 local guiVisible = false -- janela de configurações
-local espLabels = {}
 
 -- Twentyjump configurações
 local MAX_JUMPS = 100
@@ -35,13 +33,13 @@ screenGui.Parent = playerGui
 local configBtn = Instance.new("ImageButton")
 configBtn.Size = UDim2.new(0,50,0,50)
 configBtn.Position = UDim2.new(0,10,0,10)
-configBtn.Image = "rbxassetid://3926305904" -- ícone de engrenagem
+configBtn.Image = "rbxassetid://3926305904" -- ícone de engrenagem padrão do Roblox
 configBtn.BackgroundTransparency = 1
 configBtn.Parent = screenGui
 
 -- Frame principal (GUI dos botões) oculto inicialmente
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0,300,0,550)
+mainFrame.Size = UDim2.new(0,300,0,500)
 mainFrame.Position = UDim2.new(0,10,0,70)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 mainFrame.BorderSizePixel = 0
@@ -119,7 +117,6 @@ local flySlider = createSlider("FlySpeed", 10, 200, flySpeed, mainFrame, functio
 local speedBtn = createButton("Speed OFF", Color3.fromRGB(255,140,0), mainFrame)
 local speedSlider = createSlider("WalkSpeed", 8, 100, walkSpeed, mainFrame, function(val) walkSpeed = val end)
 local jumpBtn = createButton("Twentyjump OFF", Color3.fromRGB(200,0,200), mainFrame)
-local espBtn = createButton("ESP Players OFF", Color3.fromRGB(255,0,0), mainFrame)
 
 -- Lista de TP à direita
 local tpFrame = Instance.new("ScrollingFrame")
@@ -136,6 +133,7 @@ tpLayout.FillDirection = Enum.FillDirection.Vertical
 tpLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 tpLayout.Parent = tpFrame
 
+-- Atualiza lista de jogadores para TP
 local function updateTPList()
     for _,child in pairs(tpFrame:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
@@ -162,13 +160,13 @@ Players.PlayerAdded:Connect(updateTPList)
 Players.PlayerRemoving:Connect(updateTPList)
 updateTPList()
 
--- Toggle GUI
+-- Clique no ícone de configurações para mostrar/ocultar GUI
 configBtn.MouseButton1Click:Connect(function()
     guiVisible = not guiVisible
     mainFrame.Visible = guiVisible
 end)
 
--- Botões
+-- Botões de funcionalidades
 noclipBtn.MouseButton1Click:Connect(function()
     noclipEnabled = not noclipEnabled
     noclipBtn.Text = noclipEnabled and "Noclip ON" or "Noclip OFF"
@@ -193,48 +191,7 @@ jumpBtn.MouseButton1Click:Connect(function()
     jumpBtn.Text = jumpEnabled and "Twentyjump ON" or "Twentyjump OFF"
 end)
 
-espBtn.MouseButton1Click:Connect(function()
-    espEnabled = not espEnabled
-    espBtn.Text = espEnabled and "ESP Players ON" or "ESP Players OFF"
-    -- Atualiza ESP
-    for _,lbl in pairs(espLabels) do
-        if lbl and lbl.Parent then lbl:Destroy() end
-    end
-    espLabels = {}
-    if espEnabled then
-        for _,pl in pairs(Players:GetPlayers()) do
-            if pl ~= player and pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") then
-                local bill = Instance.new("BillboardGui")
-                bill.Name = "ESPBillboard"
-                bill.Size = UDim2.new(0,100,0,50)
-                bill.Adornee = pl.Character.HumanoidRootPart
-                bill.AlwaysOnTop = true
-                bill.Parent = pl.Character.HumanoidRootPart
-
-                local label = Instance.new("TextLabel")
-                label.Text = pl.Name
-                label.Size = UDim2.new(1,0,1,0)
-                label.BackgroundTransparency = 1
-                label.TextColor3 = Color3.fromRGB(255,0,0)
-                label.TextScaled = true
-                label.Font = Enum.Font.SourceSansBold
-                label.Parent = bill
-
-                table.insert(espLabels, bill)
-            end
-        end
-    end
-end)
-
--- Atualiza ESP ao entrar/sair de jogador
-Players.PlayerAdded:Connect(function()
-    if espEnabled then espBtn.MouseButton1Click:Fire() espBtn.MouseButton1Click:Fire() end
-end)
-Players.PlayerRemoving:Connect(function()
-    if espEnabled then espBtn.MouseButton1Click:Fire() espBtn.MouseButton1Click:Fire() end
-end)
-
--- BindToRenderStep para Fly, Speed e Noclip
+-- Eventos globais aplicando efeitos
 RunService:BindToRenderStep("FlySpeedNoclip", Enum.RenderPriority.Character.Value, function()
     local char = player.Character
     if char then
