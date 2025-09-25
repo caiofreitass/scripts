@@ -1,157 +1,135 @@
 loadstring([[
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
--- CONFIGURAÇÕES
-local MAX_JUMPS = 100
-local EXTRA_JUMP_POWER = 50
-local COOLDOWN = 0.15
+-- Variáveis de estado
+local noclipEnabled = false
+local flyEnabled = false
+local infiniteHealthEnabled = false
+
+-- Configurações Fly
 local flySpeed = 50
 
-local jumps = 0
-local lastJumpTime = 0
-local flyEnabled = false
-local noclipEnabled = false
-local infiniteHealthEnabled = false
-local noclipConn
-
--- FUNÇÃO TOGGLE NoclIP
-local function toggleNoclip()
-    noclipEnabled = not noclipEnabled
-    if noclipConn then noclipConn:Disconnect() noclipConn = nil end
-    if noclipEnabled then
-        noclipConn = RunService.Stepped:Connect(function()
-            if player.Character then
-                for _, part in pairs(player.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
-                end
-            end
-        end)
-    else
-        if player.Character then
-            for _, part in pairs(player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
-            end
-        end
-    end
-end
-
--- GUI MODERNA
+-- Cria GUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = player:WaitForChild("PlayerGui")
 screenGui.Name = "ModernGUI"
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
+-- Frame principal
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0,220,0,400)
+mainFrame.Size = UDim2.new(0,250,0,400)
 mainFrame.Position = UDim2.new(0,10,0,50)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 
-local uiList = Instance.new("UIListLayout")
-uiList.Padding = UDim.new(0,5)
-uiList.Parent = mainFrame
+-- Layout
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0,5)
+layout.FillDirection = Enum.FillDirection.Vertical
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.Parent = mainFrame
 
--- Função criar botão
-local function toggleButton(name, color, callback)
+-- Função para criar botões
+local function createButton(text, color, parent)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1,0,0,35)
+    btn.Size = UDim2.new(0,220,0,35)
+    btn.Text = text
     btn.BackgroundColor3 = color
     btn.TextColor3 = Color3.new(1,1,1)
-    btn.Font = Enum.Font.Gotham
+    btn.Font = Enum.Font.SourceSansBold
     btn.TextScaled = true
-    btn.Text = name
-    btn.Parent = mainFrame
-    btn.MouseButton1Click:Connect(callback)
+    btn.BorderSizePixel = 0
+    btn.Parent = parent
     return btn
 end
 
--- Botões principais
-local noclipBtn = toggleButton("Noclip OFF", Color3.fromRGB(200,50,50), function()
-    toggleNoclip()
-    noclipBtn.Text = noclipEnabled and "Noclip ON" or "Noclip OFF"
-end)
+-- Botões
+local noclipBtn = createButton("Noclip OFF", Color3.fromRGB(255,0,0), mainFrame)
+local flyBtn = createButton("Fly OFF", Color3.fromRGB(0,0,255), mainFrame)
+local healthBtn = createButton("Vida OFF", Color3.fromRGB(0,255,0), mainFrame)
+local tpBtn = createButton("TP", Color3.fromRGB(255,140,0), mainFrame)
 
-local flyBtn = toggleButton("Fly OFF", Color3.fromRGB(50,50,200), function()
-    flyEnabled = not flyEnabled
-    flyBtn.Text = flyEnabled and "Fly ON" or "Fly OFF"
-end)
+-- Frame da lista de TP
+local tpFrame = Instance.new("ScrollingFrame")
+tpFrame.Size = UDim2.new(0,220,0,200)
+tpFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+tpFrame.BorderSizePixel = 0
+tpFrame.Visible = false
+tpFrame.Parent = mainFrame
 
-local healthBtn = toggleButton("Vida OFF", Color3.fromRGB(50,200,50), function()
-    infiniteHealthEnabled = not infiniteHealthEnabled
-    healthBtn.Text = infiniteHealthEnabled and "Vida ON" or "Vida OFF"
-end)
+local tpLayout = Instance.new("UIListLayout")
+tpLayout.Padding = UDim.new(0,3)
+tpLayout.FillDirection = Enum.FillDirection.Vertical
+tpLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+tpLayout.Parent = tpFrame
 
--- TP lista integrada
-local listFrame = Instance.new("ScrollingFrame")
-listFrame.Size = UDim2.new(1,0,0,200)
-listFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
-listFrame.Visible = false
-listFrame.CanvasSize = UDim2.new(0,0,0,0)
-listFrame.Parent = mainFrame
-
-local uiList2 = Instance.new("UIListLayout")
-uiList2.Padding = UDim.new(0,3)
-uiList2.Parent = listFrame
-
-local function updatePlayerList()
-    for _, c in pairs(listFrame:GetChildren()) do
-        if c:IsA("TextButton") then c:Destroy() end
+-- Atualiza lista de jogadores no TP
+local function updateTPList()
+    for _,child in pairs(tpFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
     end
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= player then
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1,0,0,25)
-            btn.Text = p.Name
-            btn.BackgroundColor3 = Color3.fromRGB(80,80,80)
-            btn.TextColor3 = Color3.new(1,1,1)
-            btn.Font = Enum.Font.Gotham
+    for _,pl in pairs(Players:GetPlayers()) do
+        if pl ~= player then
+            local btn = createButton(pl.Name, Color3.fromRGB(0,200,0), tpFrame)
+            btn.Size = UDim2.new(1,0,0,30)
             btn.TextScaled = true
-            btn.Parent = listFrame
             btn.MouseButton1Click:Connect(function()
-                if p.Character and p.Character:FindFirstChild("HumanoidRootPart") and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    player.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame + Vector3.new(0,3,0)
+                if pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    player.Character.HumanoidRootPart.CFrame = pl.Character.HumanoidRootPart.CFrame + Vector3.new(0,3,0)
                 end
             end)
         end
     end
-    listFrame.CanvasSize = UDim2.new(0,0,0,#Players:GetPlayers()*30)
+    tpFrame.CanvasSize = UDim2.new(0,0,0,#Players:GetPlayers()*35)
 end
 
-Players.PlayerAdded:Connect(updatePlayerList)
-Players.PlayerRemoving:Connect(updatePlayerList)
-updatePlayerList()
-
-local tpBtn = toggleButton("TP", Color3.fromRGB(200,200,50), function()
-    listFrame.Visible = not listFrame.Visible
-    updatePlayerList()
+-- Toggle Noclip
+noclipBtn.MouseButton1Click:Connect(function()
+    noclipEnabled = not noclipEnabled
+    noclipBtn.Text = noclipEnabled and "Noclip ON" or "Noclip OFF"
 end)
 
--- X botão para ocultar GUI
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0,30,0,30)
-closeBtn.Position = UDim2.new(1,-35,0,5)
-closeBtn.BackgroundColor3 = Color3.fromRGB(180,50,50)
-closeBtn.Text = "X"
-closeBtn.TextScaled = true
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextColor3 = Color3.new(1,1,1)
-closeBtn.Parent = mainFrame
-
-closeBtn.MouseButton1Click:Connect(function()
-    screenGui.Enabled = not screenGui.Enabled
+-- Toggle Fly
+flyBtn.MouseButton1Click:Connect(function()
+    flyEnabled = not flyEnabled
+    flyBtn.Text = flyEnabled and "Fly ON" or "Fly OFF"
 end)
 
--- FLY
-RunService.RenderStepped:Connect(function(delta)
-    if flyEnabled and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        local hrp = player.Character.HumanoidRootPart
+-- Toggle Vida
+healthBtn.MouseButton1Click:Connect(function()
+    infiniteHealthEnabled = not infiniteHealthEnabled
+    healthBtn.Text = infiniteHealthEnabled and "Vida ON" or "Vida OFF"
+end)
+
+-- Toggle TP
+tpBtn.MouseButton1Click:Connect(function()
+    tpFrame.Visible = not tpFrame.Visible
+    if tpFrame.Visible then updateTPList() end
+end)
+
+-- Noclip
+RunService.Stepped:Connect(function()
+    local char = player.Character
+    if char then
+        for _,part in pairs(char:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = not noclipEnabled
+            end
+        end
+    end
+end)
+
+-- Fly
+RunService.RenderStepped:Connect(function()
+    local char = player.Character
+    if flyEnabled and char and char:FindFirstChild("HumanoidRootPart") then
+        local hrp = char.HumanoidRootPart
         local move = Vector3.new()
         local camCF = workspace.CurrentCamera.CFrame
 
@@ -169,58 +147,12 @@ RunService.RenderStepped:Connect(function(delta)
     end
 end)
 
--- TwentyJump + Sem dano de queda
-local function onCharacterAdded(character)
-    local humanoid = character:WaitForChild("Humanoid", 5)
-    local hrp = character:WaitForChild("HumanoidRootPart", 5)
-    if not humanoid or not hrp then return end
-
-    jumps = 0
-    lastJumpTime = 0
-
-    humanoid.StateChanged:Connect(function(_, new)
-        if new == Enum.HumanoidStateType.Landed or new == Enum.HumanoidStateType.Running then
-            jumps = 0
-        end
-        if new == Enum.HumanoidStateType.Landed then
-            humanoid.Health = humanoid.Health
-        end
-    end)
-
-    humanoid:GetPropertyChangedSignal("FloorMaterial"):Connect(function()
-        if humanoid.FloorMaterial ~= Enum.Material.Air then
-            jumps = 0
-        end
-    end)
-
-    UserInputService.JumpRequest:Connect(function()
-        if not humanoid or not hrp then return end
-        local now = tick()
-        if now - lastJumpTime < COOLDOWN then return end
-        lastJumpTime = now
-
-        if jumps < MAX_JUMPS then
-            jumps += 1
-            if jumps == 1 then
-                humanoid.Jump = true
-            else
-                local vel = hrp.Velocity
-                hrp.Velocity = Vector3.new(vel.X, EXTRA_JUMP_POWER, vel.Z)
-                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            end
-        end
-    end)
-end
-
-if player.Character then
-    onCharacterAdded(player.Character)
-end
-player.CharacterAdded:Connect(onCharacterAdded)
-
 -- Vida infinita
 RunService.Stepped:Connect(function()
-    if infiniteHealthEnabled and player.Character and player.Character:FindFirstChild("Humanoid") then
-        player.Character.Humanoid.Health = player.Character.Humanoid.MaxHealth
+    if infiniteHealthEnabled and player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+        humanoid.Health = humanoid.MaxHealth
     end
 end)
+
 ]])()
