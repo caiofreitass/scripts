@@ -28,11 +28,23 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ModernGUI"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
+-- Ícone de hack
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0,50,0,50)
+toggleBtn.Position = UDim2.new(0,10,0,10)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(200,0,0)
+toggleBtn.Text = "☠"
+toggleBtn.TextScaled = true
+toggleBtn.Font = Enum.Font.SourceSansBold
+toggleBtn.TextColor3 = Color3.new(1,1,1)
+toggleBtn.Parent = screenGui
+
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0,300,0,500)
-mainFrame.Position = UDim2.new(0,10,0,50)
+mainFrame.Position = UDim2.new(0,70,0,10)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 mainFrame.BorderSizePixel = 0
+mainFrame.Visible = false
 mainFrame.Parent = screenGui
 
 local layout = Instance.new("UIListLayout")
@@ -40,6 +52,11 @@ layout.Padding = UDim.new(0,5)
 layout.FillDirection = Enum.FillDirection.Vertical
 layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 layout.Parent = mainFrame
+
+-- Toggle menu
+toggleBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = not mainFrame.Visible
+end)
 
 -- Funções utilitárias
 local function createButton(text, color, parent)
